@@ -1,0 +1,4 @@
+- insert:
+    - id: palace-mobile
+      name: '@local/palace-mobile'
+      config: {}

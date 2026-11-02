@@ -1,0 +1,634 @@
+/* =====================================================================
+ * palace-ui / 29 · Phone session-status popover
+ * =====================================================================
+ * Companion to shell/45-session-status.js. The trigger only exists in the
+ * phone layout (the same media query as 30-mobile.css) and fills the header
+ * utilities seat; the popover is portalled to <body> and positioned in JS, so
+ * every rule that styles it lives outside the narrow media query.
+ *
+ * Visual language follows the Playground control surface: surface-2 material
+ * with the shared floating-menu fill, a hairline border, one elevation stroke,
+ * 14px outer radius, 10px inner radius (14 − 4 padding), a 44px touch row and
+ * a 4px/−4px entrance. Depth comes from the hairline, not from a glow.
+ *
+ * Rules honoured: no literal colours (only --pui-* / --dsw-*), no
+ * !important, hover only under (hover: hover), focus-visible always present,
+ * and the reduced-motion kill-switch in 10-base.css covers both animations.
+ * ===================================================================== */
+
+/* ---------------------------------------------------------------------
+ * 0. Local component tokens (resolved from the shared token layer)
+ * ------------------------------------------------------------------- */
+html body {
+  --pui-ss-fill: var(--pui-overlay-menu-fill-strong);
+  --pui-ss-border: var(--pui-overlay-border);
+  --pui-ss-shadow: var(--pui-overlay-shadow);
+  --pui-ss-run: var(--dsw-alias-state-business-primary);
+  --pui-ss-radius: var(--pui-overlay-menu-radius);
+  --pui-ss-ring: var(--dsw-focus-ring-color, var(--pui-accent-sky));
+}
+
+/* ---------------------------------------------------------------------
+ * 1. Trigger — phone layout only (matches every rule in 30-mobile.css)
+ * ------------------------------------------------------------------- */
+.pui-ss {
+  display: none;
+}
+
+@media (max-width: 767px), (max-width: 1023px) and (max-height: 480px) and (pointer: coarse) {
+  .pui-ss {
+    display: flex;
+    flex: none;
+    align-items: center;
+    /* The utilities row gaps neighbours by 4px; 2px on each side keeps the
+     * 44px targets 8px apart without changing the button box. */
+    margin-inline: 2px;
+    min-width: 0;
+  }
+
+  html body .pui-ss-trigger {
+    position: relative;
+    box-sizing: border-box;
+    display: grid;
+    place-items: center;
+    width: var(--pui-touch-target);
+    height: var(--pui-touch-target);
+    padding: 0;
+    border: 0;
+    border-radius: var(--pui-radius-pill);
+    background: transparent;
+    color: var(--dsw-alias-label-secondary);
+    font: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* The 44px box is the hit target; the tinted disc stays 32px so the header
+   * row does not read as a second segmented group. */
+  html body .pui-ss-trigger::before {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border-radius: inherit;
+    background: transparent;
+    transition: background-color var(--pui-duration-press) var(--pui-ease-out);
+  }
+
+  html body .pui-ss-triggerIcon {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+  }
+
+  html body .pui-ss-trigger[aria-expanded='true']::before {
+    background: var(--dsw-alias-interactive-bg-active);
+    color: var(--dsw-alias-label-primary);
+  }
+
+  html body .pui-ss-trigger[aria-expanded='true'] {
+    color: var(--dsw-alias-label-primary);
+  }
+
+  html body .pui-ss-trigger:active::before {
+    background: var(--dsw-alias-interactive-bg-active);
+  }
+
+  html body .pui-ss-trigger:focus-visible {
+    outline: 2px solid var(--pui-ss-ring);
+    outline-offset: 2px;
+  }
+
+  /* Running team/subagent work: a dot, never colour alone (the panel spells
+   * the state out in words). */
+  html body .pui-ss-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 2;
+    width: 7px;
+    height: 7px;
+    border-radius: var(--pui-radius-pill);
+    background: var(--pui-ss-run);
+    border: 1.5px solid var(--dsw-alias-bg-base);
+  }
+}
+
+@media (hover: hover) {
+  html body .pui-ss-trigger:hover::before {
+    background: var(--dsw-alias-interactive-bg-hover);
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * 2. Popover surface
+ * ------------------------------------------------------------------- */
+html body .pui-ss-panel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  z-index: 1100;
+  overflow: hidden;
+  max-width: calc(100vw - 16px - var(--pui-safe-left) - var(--pui-safe-right));
+  border: 1px solid var(--pui-ss-border);
+  border-radius: var(--pui-ss-radius);
+  background: var(--pui-ss-fill);
+  -webkit-backdrop-filter: var(--pui-overlay-blur);
+  backdrop-filter: var(--pui-overlay-blur);
+  box-shadow: var(--pui-ss-shadow);
+  color: var(--dsw-alias-label-primary);
+  font-family: var(--dsw-font-family);
+  animation: pui-ss-in var(--pui-duration-panel) var(--pui-ease-out);
+  transform-origin: top right;
+}
+
+html body .pui-ss-panel[data-placement='above'] {
+  animation-name: pui-ss-in-up;
+  transform-origin: bottom right;
+}
+
+/* The panel is a programmatic focus target; its children own every ring. */
+html body .pui-ss-panel:focus,
+html body .pui-ss-panel:focus-visible {
+  outline: none;
+}
+
+@keyframes pui-ss-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pui-ss-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---- head ---------------------------------------------------------- */
+html body .pui-ss-head {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  gap: var(--pui-space-sm);
+  padding: 10px 8px 6px 12px;
+}
+
+html body .pui-ss-headText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+html body .pui-ss-eyebrow {
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11px;
+  font-weight: 510;
+  line-height: 14px;
+  letter-spacing: 0.04em;
+}
+
+html body .pui-ss-title {
+  overflow: hidden;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  line-height: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html body .pui-ss-close {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-top: -2px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--pui-radius-sm);
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background-color var(--pui-duration-press) var(--pui-ease-out),
+    color var(--pui-duration-press) var(--pui-ease-out);
+}
+
+/* 36px visual + 4px ring = a 44px touch target that never overlaps a row. */
+html body .pui-ss-close::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+}
+
+html body .pui-ss-close:active {
+  background: var(--dsw-alias-interactive-bg-active);
+  color: var(--dsw-alias-label-primary);
+}
+
+html body .pui-ss-close:focus-visible {
+  outline: 2px solid var(--pui-ss-ring);
+  outline-offset: 0;
+}
+
+/* ---- body ---------------------------------------------------------- */
+html body .pui-ss-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  padding: 0 var(--pui-space-xs) var(--pui-space-xs);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ---- summary rows -------------------------------------------------- */
+html body .pui-ss-row {
+  box-sizing: border-box;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--pui-radius-md);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--pui-duration-press) var(--pui-ease-out);
+}
+
+html body .pui-ss-row[data-static='true'] {
+  cursor: default;
+}
+
+html body .pui-ss-rowIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--pui-radius-sm);
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-secondary);
+}
+
+html body .pui-ss-row[data-static='true'] .pui-ss-rowIcon {
+  color: var(--dsw-alias-label-secondary);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--pui-border-default);
+}
+
+html body .pui-ss-rowMain {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+html body .pui-ss-rowLabel {
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11px;
+  line-height: 14px;
+}
+
+html body .pui-ss-rowValue {
+  overflow: hidden;
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  font-weight: 510;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html body .pui-ss-row[data-static='true'] .pui-ss-rowValue {
+  color: var(--dsw-alias-label-secondary);
+  font-weight: 400;
+}
+
+html body .pui-ss-rowDesc {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11px;
+  line-height: 15px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+html body .pui-ss-rowMeta {
+  flex: none;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11px;
+  line-height: 14px;
+}
+
+html body .pui-ss-chevron {
+  display: grid;
+  flex: none;
+  place-items: center;
+  color: var(--dsw-alias-label-secondary);
+  transition: transform var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body .pui-ss-chevron[data-expanded='true'] {
+  transform: rotate(90deg);
+}
+
+html body .pui-ss-row:active:not([data-static='true']) {
+  background: var(--dsw-alias-interactive-bg-active);
+}
+
+html body .pui-ss-row[aria-expanded='true'] {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+html body .pui-ss-row:focus-visible,
+html body .pui-ss-item:focus-visible {
+  outline: 2px solid var(--pui-ss-ring);
+  outline-offset: -2px;
+}
+
+/* ---- inline detail (team roster / subagent catalog) ----------------- */
+html body .pui-ss-group {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0 2px 4px;
+  padding: 2px;
+  border: 0.5px solid var(--pui-border-divider);
+  border-radius: var(--pui-radius-lg);
+  background: var(--dsw-alias-bg-layer-1);
+  animation: pui-ss-group-in 160ms var(--pui-ease-out);
+}
+
+@keyframes pui-ss-group-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+html body .pui-ss-groupHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--pui-space-sm);
+  padding: 4px 8px 4px;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11px;
+  line-height: 14px;
+}
+
+html body .pui-ss-item {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--pui-space-sm);
+  width: 100%;
+  min-height: var(--pui-touch-target);
+  padding: 5px 8px;
+  border: 0;
+  border-radius: var(--pui-radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color var(--pui-duration-press) var(--pui-ease-out);
+}
+
+html body .pui-ss-item[data-current='true'],
+html body .pui-ss-item[data-static='true'] {
+  cursor: default;
+}
+
+html body .pui-ss-itemMain {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+html body .pui-ss-itemName {
+  overflow: hidden;
+  color: var(--dsw-alias-label-primary);
+  font-size: 12.5px;
+  line-height: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html body .pui-ss-itemMeta {
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11px;
+  line-height: 14px;
+}
+
+html body .pui-ss-state {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11px;
+  line-height: 14px;
+  white-space: nowrap;
+}
+
+html body .pui-ss-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--pui-radius-pill);
+  background: var(--dsw-alias-state-idle-primary);
+}
+
+html body .pui-ss-state[data-state='running'] {
+  color: var(--dsw-alias-label-primary);
+}
+
+html body .pui-ss-state[data-state='running'] .pui-ss-dot {
+  background: var(--pui-ss-run);
+}
+
+html body .pui-ss-state[data-state='failed'] {
+  color: var(--dsw-alias-state-error-secondary);
+}
+
+html body .pui-ss-state[data-state='failed'] .pui-ss-dot {
+  background: var(--dsw-alias-state-error-primary);
+}
+
+html body .pui-ss-state[data-state='provisioning'] {
+  color: var(--dsw-alias-state-warn-label);
+}
+
+html body .pui-ss-state[data-state='provisioning'] .pui-ss-dot {
+  background: var(--dsw-alias-state-warn-primary);
+}
+
+html body .pui-ss-tag {
+  flex: none;
+  padding: 0 6px;
+  border: 0.5px solid var(--pui-border-default);
+  border-radius: var(--pui-radius-pill);
+  color: var(--dsw-alias-label-secondary);
+  font-size: 10px;
+  line-height: 16px;
+}
+
+html body .pui-ss-item:active:not([data-current='true']):not([data-static='true']) {
+  background: var(--dsw-alias-interactive-bg-active);
+}
+
+/* ---- notes / empty / error ----------------------------------------- */
+html body .pui-ss-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 2px 6px 6px;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+html body .pui-ss-note[data-tone='error'] {
+  color: var(--dsw-alias-state-error-secondary);
+}
+
+html body .pui-ss-note[data-tone='warn'] {
+  color: var(--dsw-alias-state-warn-label);
+}
+
+html body .pui-ss-noteIcon {
+  display: inline-flex;
+  flex: none;
+  padding-top: 1px;
+}
+
+/* Action suffixes for rows whose accessible name is their own visible text
+ * (axe: label-content-name-mismatch). */
+html body .pui-ss-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- foot ---------------------------------------------------------- */
+html body .pui-ss-foot {
+  flex: none;
+  padding: 7px 12px 9px;
+  border-top: 0.5px solid var(--pui-border-divider);
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11px;
+  line-height: 15px;
+}
+
+/* The stock 「更多操作」 menu is folded into this panel on phones, so its two
+ * Session actions live here as full-width 44px rows above the note. */
+html body .pui-ss-footActions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 6px;
+}
+
+html body .pui-ss-action {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--pui-touch-target);
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--pui-radius-sm);
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 13px;
+  line-height: 18px;
+  text-align: start;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color var(--pui-duration-press) var(--pui-ease-out);
+}
+
+html body .pui-ss-action:active {
+  background: var(--dsw-alias-interactive-bg-active);
+}
+
+html body .pui-ss-action:focus-visible {
+  outline: 2px solid var(--pui-ss-ring);
+  outline-offset: -2px;
+}
+
+html body .pui-ss-footNote {
+  margin: 0;
+}
+
+/* ---- hover-capable pointers only ----------------------------------- */
+@media (hover: hover) {
+  html body .pui-ss-row:hover:not([data-static='true']),
+  html body .pui-ss-item:hover:not([data-current='true']):not([data-static='true']),
+  html body .pui-ss-close:hover,
+  html body .pui-ss-action:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+  }
+
+  html body .pui-ss-close:hover {
+    color: var(--dsw-alias-label-primary);
+  }
+}
+
+/* ---- forced colours: keep the dot visible without relying on colour -- */
+@media (forced-colors: active) {
+  html body .pui-ss-dot {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+
+  html body .pui-ss-panel {
+    border: 1px solid CanvasText;
+  }
+}

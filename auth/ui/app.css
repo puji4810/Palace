@@ -1,0 +1,712 @@
+/*
+ * Palace 认证页 · Soft Minimal Dark（参见 docs/ui-design-system.md）
+ * 深色优先，单色表面 + 低对比边框，无阴影；移动端优先。
+ * 元素 ID/类名与 app.js 保持一致，改动请同步。
+ *
+ * 审计修正（DOM 实测，2026-11-02）：
+ * - 触控目标统一 ≥ 40px（--touch 仍为 44px，小号按钮 40px）
+ * - 小号/次要文字改用 --muted-strong（AA ≥ 4.5:1），--faint 仅用于装饰线
+ * - 移除按压缩放动画，只保留 150ms 明度过渡（设计规范 §5）
+ * - 硬编码色值收敛为 token（设计规范 §6）
+ * - 恢复码网格按可用宽度自适应列数，禁止在组中间断行
+ */
+:root {
+  color-scheme: dark;
+  --bg: #171717;
+  --surface: #242424;
+  --card: #303030;
+  --text: #e5e5e5;
+  --muted: #8e8e93;
+  /* 小号文字在 --card/--surface 上仍满足 WCAG AA 的次要色 */
+  --muted-strong: #a1a1a6;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.1);
+  --hover: rgba(255, 255, 255, 0.05);
+  --accent-blue: #38bdf8;
+  --accent-blue-soft: rgba(56, 189, 248, 0.12);
+  --accent-green: #10b981;
+  --accent-green-soft: rgba(16, 185, 129, 0.12);
+  --accent-green-text: #34d399;
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.1);
+  --danger-text: #fca5a5;
+  --ink: #171717;
+  --btn-hover: #373737;
+  --btn-active: #3e3e3e;
+  --btn-primary-hover: #ffffff;
+  --btn-primary-active: #d4d4d4;
+  --btn-danger-hover: rgba(248, 113, 113, 0.16);
+  --radius-card: 20px;
+  --radius-field: 16px;
+  --radius-pill: 9999px;
+  --touch: 44px;
+  --touch-small: 40px;
+  --font: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+    "Helvetica Neue", "Microsoft YaHei", Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* 作者样式中的 display 会覆盖 UA 的 [hidden]，这里统一兜底 */
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+}
+
+body {
+  font-family: var(--font);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+/* 布局：移动端全宽，桌面端收窄居中 */
+.shell {
+  width: 100%;
+  max-width: 28rem;
+  margin: 0 auto;
+  min-height: 100dvh;
+  padding: calc(env(safe-area-inset-top) + 1.25rem) 1rem calc(env(safe-area-inset-bottom) + 1.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.shell.wide {
+  max-width: 40rem;
+}
+
+/* 顶部品牌行：胶囊形 */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.4rem 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  color: var(--text);
+}
+
+.mark {
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: var(--radius-pill);
+  display: grid;
+  place-items: center;
+  background: var(--text);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+/* 表面卡片 */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 1.25rem;
+}
+
+h1 {
+  font-size: 1.3rem;
+  line-height: 1.3;
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+h2 {
+  font-size: 0.98rem;
+  margin: 0;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.lead {
+  margin: 0 0 1.1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+/* 按钮：触控高度 ≥ 44px，小号 ≥ 40px */
+.btn {
+  appearance: none;
+  border: 0;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-weight: 500;
+  font-size: 0.95rem;
+  min-height: var(--touch);
+  border-radius: var(--radius-pill);
+  padding: 0.6rem 1.1rem;
+  cursor: pointer;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: background 0.15s ease, opacity 0.15s ease;
+  touch-action: manipulation;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--btn-hover);
+}
+
+/* 点击反馈只提升明度，不做缩放（设计规范 §5） */
+.btn:active:not(:disabled) {
+  background: var(--btn-active);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* 主操作：白底深字（与 ChatGPT 发送钮一致） */
+.btn.primary {
+  background: var(--text);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.btn.primary:hover:not(:disabled) {
+  background: var(--btn-primary-hover);
+}
+
+.btn.primary:active:not(:disabled) {
+  background: var(--btn-primary-active);
+}
+
+.btn.small {
+  width: auto;
+  min-height: var(--touch-small);
+  padding: 0.35rem 0.9rem;
+  font-size: 0.85rem;
+}
+
+.btn.danger {
+  color: var(--danger-text);
+  background: var(--danger-soft);
+}
+
+.btn.danger:hover:not(:disabled) {
+  background: var(--btn-danger-hover);
+}
+
+.btn.ghost {
+  background: transparent;
+  color: var(--muted-strong);
+}
+
+.btn.ghost:hover:not(:disabled) {
+  background: var(--hover);
+  color: var(--text);
+}
+
+/* 输入框：16px 以阻止 iOS 自动放大；textarea 用于多行长恢复码 */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.field input,
+.field textarea {
+  font: inherit;
+  font-size: 16px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-field);
+  min-height: var(--touch);
+  padding: 0.6rem 0.9rem;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  width: 100%;
+}
+
+.field textarea {
+  display: block;
+  resize: none;
+  line-height: 1.5;
+  min-height: calc(var(--touch) * 1.5);
+  padding-top: 0.55rem;
+  padding-bottom: 0.55rem;
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: var(--muted);
+}
+
+.field input:focus,
+.field textarea:focus {
+  border-color: var(--accent-blue);
+  background: var(--surface);
+}
+
+.field .mono {
+  font-family: var(--mono);
+  letter-spacing: 0.1em;
+}
+
+.field textarea.mono {
+  letter-spacing: 0.04em;
+}
+
+/* 分隔：弱化，仅用留白 */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--muted-strong);
+  font-size: 0.75rem;
+  margin: 1rem 0;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* 说明块：下沉式背景，避免 --card 上小字对比度不足 */
+.note {
+  margin: 1rem 0 0;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-field);
+  background: var(--bg);
+  color: var(--muted-strong);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.hint-block {
+  margin: 0 0 0.9rem;
+}
+
+.ghost-block {
+  margin-bottom: 1rem;
+}
+
+.hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.82rem;
+  color: var(--muted-strong);
+  min-height: 1.1em;
+  line-height: 1.5;
+}
+
+/* 空提示不占位，保持紧凑布局 */
+.hint:empty {
+  display: none;
+}
+
+/* 文字链接按钮：触控区足够 */
+.link {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0.5rem 0;
+  min-height: var(--touch);
+  color: var(--accent-blue);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  margin-top: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.status {
+  margin: 0.9rem 0 0;
+  font-size: 0.88rem;
+  min-height: 1.2em;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.status.error {
+  color: var(--danger);
+}
+
+.status.ok {
+  color: var(--accent-green);
+}
+
+.status:empty {
+  display: none;
+}
+
+.foot {
+  text-align: center;
+  color: var(--muted-strong);
+  font-size: 0.75rem;
+  padding: 0.5rem 0.5rem 0;
+  margin-top: auto;
+}
+
+.foot code {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+}
+
+/* 步骤指示：胶囊式进度 */
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1.2rem;
+  font-size: 0.75rem;
+  color: var(--muted-strong);
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.step-dot {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: var(--radius-pill);
+  display: grid;
+  place-items: center;
+  background: var(--card);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted-strong);
+}
+
+.step.active {
+  color: var(--text);
+}
+
+.step.active .step-dot {
+  background: var(--accent-blue);
+  color: var(--ink);
+}
+
+.step.done .step-dot {
+  background: var(--accent-green-soft);
+  color: var(--accent-green-text);
+}
+
+.step-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border-strong);
+  min-width: 0.5rem;
+}
+
+/* 二维码：白底保证扫描对比度 */
+.qr {
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 0.9rem;
+}
+
+.qr img,
+.qr svg {
+  width: min(100%, 220px);
+  height: auto;
+  display: block;
+}
+
+/* 手工密钥：只在空格处分组换行，避免把一个分组拆到两行 */
+.secret {
+  font-family: var(--mono);
+  font-size: 0.88rem;
+  letter-spacing: 0.08em;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-field);
+  padding: 0.7rem 0.85rem;
+  white-space: normal;
+  overflow-wrap: break-word;
+  text-align: center;
+  user-select: all;
+  color: var(--text);
+}
+
+/* 恢复码：按宽度自适应列数，窄屏单列保证完整可见 */
+.codes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  margin: 0.9rem 0;
+}
+
+.codes span {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 0.5rem 0.4rem;
+  text-align: center;
+  user-select: all;
+  overflow-wrap: break-word;
+}
+
+/* 提示条：柔和色块 */
+.notice {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius-field);
+  font-size: 0.84rem;
+  line-height: 1.5;
+  background: var(--accent-blue-soft);
+  color: var(--text);
+  margin: 0.8rem 0;
+}
+
+.notice.warn {
+  background: var(--danger-soft);
+  color: var(--danger-text);
+}
+
+/* 复选框：触控区由 label 保证 ≥ 44px */
+.check {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  font-size: 0.85rem;
+  color: var(--muted);
+  padding: 0.35rem 0;
+  min-height: var(--touch);
+  cursor: pointer;
+}
+
+.check input {
+  margin-top: 0.15rem;
+  accent-color: var(--accent-green);
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+
+/* 分节：靠留白区分，不用硬分割线 */
+.section {
+  margin-top: 1.6rem;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.7rem;
+}
+
+.section-head p {
+  margin: 0.2rem 0 0;
+  font-size: 0.82rem;
+  color: var(--muted-strong);
+  line-height: 1.45;
+}
+
+.section-head > div {
+  min-width: 0;
+}
+
+.section-head > .btn,
+.section-head > .link {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* 窄屏步骤条：非当前步骤只显示序号 */
+@media (max-width: 420px) {
+  .step:not(.active) > span:last-child {
+    display: none;
+  }
+  .stepper {
+    gap: 0.3rem;
+  }
+}
+
+/* 窄屏：标题与操作按钮分行，避免文字挤压 */
+@media (max-width: 420px) {
+  .section-head {
+    flex-wrap: wrap;
+  }
+  .section-head > .btn,
+  .section-head > .link {
+    margin-left: auto;
+  }
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* 列表行：卡片化，紧凑自适应高度 */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  background: var(--card);
+  border-radius: 16px;
+}
+
+.row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.row-title {
+  font-size: 0.92rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  color: var(--text);
+}
+
+.row-sub {
+  font-size: 0.78rem;
+  color: var(--muted-strong);
+  margin-top: 0.15rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 窄屏允许次要信息换行，避免把“最近使用”等关键信息截掉 */
+@media (max-width: 480px) {
+  .row-sub {
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
+}
+
+/* 状态标签：状态点 + 文字 */
+.tag {
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.12rem 0.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent-blue-soft);
+  color: var(--accent-blue);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.tag.ok {
+  background: var(--accent-green-soft);
+  color: var(--accent-green-text);
+}
+
+.tag.warn {
+  background: var(--danger-soft);
+  color: var(--danger-text);
+}
+
+.empty {
+  color: var(--muted-strong);
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+  margin: 0;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.center {
+  text-align: center;
+}
+
+.mt {
+  margin-top: 0.9rem;
+}
+
+code {
+  font-family: var(--mono);
+}
+
+a {
+  color: var(--accent-blue);
+}
+
+/* 键盘可达性：所有可交互元素保留可见焦点环 */
+:where(button, a, input, textarea, label.check):focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+
+/* 安全设置页顶部：标题 + 返回胶囊 */
+.card > .section-head:first-child .link {
+  margin-top: 0;
+  padding: 0.35rem 0.8rem;
+  min-height: var(--touch-small);
+  white-space: nowrap;
+  background: var(--card);
+  border-radius: var(--radius-pill);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.card > .section-head:first-child .link:hover {
+  text-decoration: none;
+  background: var(--btn-hover);
+}
+
+/* 桌面端：卡片稍宽 */
+@media (min-width: 640px) {
+  .card {
+    padding: 1.6rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .field input,
+  .field textarea {
+    transition: none;
+  }
+}

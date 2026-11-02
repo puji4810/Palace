@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "title": "Palace 移动端",
+    "description": "适合手机的界面：底部导航、胶囊顶栏与悬浮输入面板。"
+  },
+  "nav": {
+    "chat": "对话",
+    "tasks": "任务",
+    "files": "文件",
+    "me": "我的"
+  },
+  "header": {
+    "online": "在线"
+  },
+  "composer": {
+    "placeholder": "给 Palace 发消息",
+    "attach": "添加附件",
+    "voice": "语音",
+    "send": "发送",
+    "stop": "停止"
+  }
+}

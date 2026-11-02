@@ -1,0 +1,1059 @@
+/* =====================================================================
+ * palace-ui / 23 · Overlays
+ * =====================================================================
+ * Dialogs (settings + confirmation primitives), drawers, popovers, dropdown
+ * menus (model / session / account / view), the slash-command surface,
+ * tooltips, toasts, skeletons and empty / no-result / offline / error panels.
+ *
+ * Rules honoured here (see DESIGN_CONTRACT.md):
+ *   · Materials are surface-2 / surface-3; depth comes from a hairline border
+ *     OR the elevation stroke — never both on one surface.
+ *   · Backdrop blur lives only on menus/popovers (translucent material), never
+ *     on dialogs, toasts or cards.
+ *   · Panel radius 24, inner radius = outer − padding (concentric ladder).
+ *   · Every interactive element has hover (hover-capable only), active,
+ *     focus-visible and disabled states.
+ *   · Escape / click-outside / focus-restore are DSH behaviour: styling only.
+ *
+ * Selector hashes pin DSH 0.2.1-rc.5 CSS-module names; the full hash map lives
+ * in docs/palace-ui-overlays-mobile.md. All of them are attribute-matched
+ * (`[class*='_item_4ub78_']`) so an unrelated hash bump is a no-op, not a
+ * layout regression.
+ * ===================================================================== */
+
+/* ---------------------------------------------------------------------
+ * 0. Local component tokens (resolve from the shared token layer only)
+ * ------------------------------------------------------------------- */
+html body {
+  /* The one material used by floating menus; opaque enough for text, tinted
+   * so the blurred content behind stays perceptible. */
+  --pui-overlay-menu-fill: color-mix(in srgb, var(--dsw-alias-bg-layer-2) 86%, transparent);
+  --pui-overlay-menu-fill-strong: color-mix(in srgb, var(--dsw-alias-bg-layer-2) 94%, transparent);
+  --pui-overlay-blur: blur(20px) saturate(140%);
+  --pui-overlay-border: var(--dsw-alias-border-l2);
+  --pui-overlay-selected: color-mix(in srgb, var(--dsw-alias-link) 14%, transparent);
+  --pui-overlay-selected-strong: color-mix(in srgb, var(--dsw-alias-link) 22%, transparent);
+  --pui-overlay-danger: color-mix(in srgb, var(--dsw-alias-state-error-primary) 13%, transparent);
+  --pui-overlay-shadow: var(--dsw-elevation-prominent);
+  --pui-overlay-shadow-soft: var(--dsw-elevation-soft);
+  --pui-overlay-panel-radius: var(--pui-radius-panel);
+  --pui-overlay-menu-radius: var(--pui-radius-input);
+  --pui-overlay-menu-pad: var(--pui-space-xs);
+  --pui-overlay-item-radius: var(--pui-radius-md);
+  --pui-overlay-item-height: 34px;
+  --pui-overlay-item-height-touch: var(--pui-touch-target);
+}
+
+html body:not([data-ds-dark-theme]) {
+  --pui-overlay-menu-fill: color-mix(in srgb, var(--dsw-alias-bg-layer-2) 93%, transparent);
+  --pui-overlay-menu-fill-strong: color-mix(in srgb, var(--dsw-alias-bg-layer-2) 97%, transparent);
+  --pui-overlay-selected: color-mix(in srgb, var(--dsw-alias-link) 12%, transparent);
+  --pui-overlay-selected-strong: color-mix(in srgb, var(--dsw-alias-link) 18%, transparent);
+}
+
+/* ---------------------------------------------------------------------
+ * 1. Motion — one panel entrance, reduced-motion respected by 10-base.css
+ * ------------------------------------------------------------------- */
+@keyframes pui-overlay-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pui-overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * 2. Modal / dialog material
+ * ------------------------------------------------------------------- */
+/* Generic modal primitive: .root_o6lrb_6 > .mask_o6lrb_18 / .dialog_o6lrb_33 */
+html body [class*='_root_o6lrb_'] {
+  z-index: 1200;
+  padding: max(24px, var(--pui-safe-top)) 24px max(24px, var(--pui-safe-bottom));
+}
+
+html body [class*='_mask_o6lrb_'] {
+  backdrop-filter: none;
+}
+
+html body [class*='_mask_o6lrb_']::after {
+  background: var(--dsw-alias-bg-mask-1);
+}
+
+html body [class*='_dialog_o6lrb_'] {
+  box-sizing: border-box;
+  border: 0;
+  border-radius: var(--pui-overlay-panel-radius);
+  background: var(--dsw-alias-bg-layer-2);
+  box-shadow: var(--pui-overlay-shadow);
+  --dsw-elevation-stroke-color: var(--pui-border-hover);
+  color: var(--dsw-alias-label-primary);
+  max-height: min(720px, calc(100dvh - 48px));
+  overscroll-behavior: contain;
+}
+
+html body [class*='_dialog_o6lrb_']:focus-visible,
+html body [class*='_dialog_o6lrb_']:focus {
+  outline: none;
+}
+
+/* The primitive's enter animation is subtle and short: a 4px rise, no bounce. */
+html body [class*='_dialog_o6lrb_'] {
+  animation: pui-overlay-in var(--pui-duration-panel) var(--pui-ease-out);
+}
+
+html body [class*='_header_o6lrb_'] {
+  padding: var(--pui-space-xl) var(--pui-space-lg) var(--pui-space-md) var(--pui-space-xl);
+  align-items: center;
+}
+
+html body [class*='_title_o6lrb_'] {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 24px;
+  color: var(--dsw-alias-label-primary);
+}
+
+html body [class*='_close_o6lrb_'] {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--pui-radius-sm);
+  color: var(--dsw-alias-label-secondary);
+  transition: background-color var(--pui-duration-press) var(--pui-ease-out),
+    color var(--pui-duration-press) var(--pui-ease-out);
+}
+
+html body [class*='_description_o6lrb_'],
+html body [class*='_body_o6lrb_'] {
+  color: var(--dsw-alias-label-secondary);
+  font-size: 13.5px;
+  line-height: 21px;
+}
+
+html body [class*='_body_o6lrb_'] {
+  margin-top: var(--pui-space-lg);
+  padding: 0 var(--pui-space-xl);
+}
+
+html body [class*='_description_o6lrb_'] {
+  padding: 0 var(--pui-space-xl);
+}
+
+html body [class*='_footer_o6lrb_'] {
+  gap: var(--pui-space-sm);
+  padding: 0 var(--pui-space-xl) var(--pui-space-xl);
+}
+
+/* Modal action buttons: keep the density of a dialog footer, with a real
+ * 44px hit area on coarse pointers. */
+html body [class*='_dialog_o6lrb_'] button,
+html body [role='dialog'] button {
+  touch-action: manipulation;
+}
+
+html body [class*='_modalAction'] {
+  min-height: 36px;
+  border-radius: var(--pui-radius-md);
+  font-weight: 500;
+}
+
+/* ---------------------------------------------------------------------
+ * 3. Settings dialog (VOzbGW_* — dsh-client-ui-settings-general)
+ * ------------------------------------------------------------------- */
+html body [class*='VOzbGW_overlay'] {
+  z-index: 1200;
+  align-items: center;
+  justify-content: center;
+  padding: max(24px, var(--pui-safe-top)) 24px max(24px, var(--pui-safe-bottom));
+}
+
+html body [class*='VOzbGW_mask'] {
+  inset: 0;
+  background: var(--dsw-alias-bg-mask-1);
+  backdrop-filter: none;
+}
+
+html body [class*='VOzbGW_panel'] {
+  box-sizing: border-box;
+  width: min(880px, calc(100vw - 48px));
+  height: min(800px, calc(100dvh - 48px));
+  border: 0;
+  border-radius: var(--pui-overlay-panel-radius);
+  background: var(--dsw-alias-bg-layer-2);
+  box-shadow: var(--pui-overlay-shadow);
+  --dsw-elevation-stroke-color: var(--pui-border-hover);
+  color: var(--dsw-alias-label-primary);
+  animation: pui-overlay-in var(--pui-duration-panel) var(--pui-ease-out);
+  overscroll-behavior: contain;
+}
+
+html body [class~='VOzbGW_nav'] {
+  width: 200px;
+  gap: var(--pui-space-lg);
+  padding: var(--pui-space-xl) var(--pui-space-md) 0;
+  border-right: 1px solid var(--dsw-alias-border-l1);
+}
+
+html body [class*='VOzbGW_navTitle'] {
+  padding: 0 var(--pui-space-md);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 24px;
+}
+
+html body [class*='VOzbGW_navList'] {
+  gap: 2px;
+}
+
+html body [class*='VOzbGW_navCell'] {
+  height: 38px;
+  border-radius: var(--pui-radius-md);
+  padding: 8px var(--pui-space-md);
+  gap: var(--pui-space-sm);
+  color: var(--dsw-alias-label-secondary);
+  font-size: 13.5px;
+  transition: background-color var(--pui-duration-press) var(--pui-ease-out),
+    color var(--pui-duration-press) var(--pui-ease-out);
+}
+
+html body [class*='VOzbGW_navCell'][class*='VOzbGW_active'] {
+  background: var(--dsw-specific-sidebar-nav-item-active);
+  color: var(--dsw-alias-label-primary);
+  font-weight: 500;
+  box-shadow: inset 2px 0 0 var(--dsw-specific-sidebar-nav-item-active-accent);
+}
+
+html body [class*='VOzbGW_navIcon'] {
+  color: var(--dsw-alias-menu-icon);
+}
+
+html body [class*='VOzbGW_navCell'][class*='VOzbGW_active'] [class*='VOzbGW_navIcon'] {
+  color: var(--dsw-alias-label-primary);
+}
+
+html body [class*='VOzbGW_header'] {
+  height: 56px;
+  padding: var(--pui-space-xl) var(--pui-space-md) var(--pui-space-sm) var(--pui-space-xl);
+  align-items: center;
+}
+
+html body [class*='VOzbGW_close'] {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--pui-radius-sm);
+  transition: background-color var(--pui-duration-press) var(--pui-ease-out);
+}
+
+html body [class*='VOzbGW_options'] {
+  padding: 0 var(--pui-space-xl) var(--pui-space-xl);
+  overscroll-behavior: contain;
+}
+
+html body [class*='VOzbGW_content'] {
+  min-width: 0;
+}
+
+/* ---------------------------------------------------------------------
+ * 4. Dropdown menus / popovers
+ * ------------------------------------------------------------------- */
+/* Both menu engines share the surface + material pair:
+ *   anchor-positioned  → [class*='_surface_ri079_']
+ *   portal             → [class*='_list_4ub78_'][class*='_portal_4ub78_']
+ * The blur is applied to the material layer only, so text never gets blurred
+ * and the surface stays crisp on top of video/canvas content. */
+html body [class*='_surface_ri079_'] {
+  border: 0;
+  border-radius: var(--pui-overlay-menu-radius);
+  background: transparent;
+  box-shadow: none;
+  color: var(--dsw-alias-label-primary);
+  isolation: isolate;
+}
+
+html body [class*='_material_ri079_'] {
+  border-radius: inherit;
+  background: var(--pui-overlay-menu-fill);
+  -webkit-backdrop-filter: var(--pui-overlay-blur);
+  backdrop-filter: var(--pui-overlay-blur);
+  box-shadow: var(--pui-overlay-shadow);
+  --dsw-elevation-stroke-color: var(--pui-border-hover);
+}
+
+/* Fallback for a menu shell rendered without the shared material layer (e.g. a
+ * future refactor): the shell itself carries the same material so menus never
+ * turn into transparent, unreadable floating text. */
+html body :is(
+    [class*='_list_4ub78_'],
+    [class*='_7KE1Ra_menu'],
+    [class*='_3e4SsG_menu']
+  ):not(:has([class*='_material_ri079_'])) {
+  background: var(--pui-overlay-menu-fill);
+  -webkit-backdrop-filter: var(--pui-overlay-blur);
+  backdrop-filter: var(--pui-overlay-blur);
+  box-shadow: var(--pui-overlay-shadow);
+  --dsw-elevation-stroke-color: var(--pui-border-hover);
+}
+
+html body [class*='_list_4ub78_'],
+html body [class*='_submenu_4ub78_'] {
+  box-sizing: border-box;
+  border: 0;
+  border-radius: var(--pui-overlay-menu-radius);
+  padding: var(--pui-overlay-menu-pad);
+  gap: 0;
+  /* The fill + blur + shadow live on the shared [_material_ri079_] layer so
+   * there is exactly one translucent material per menu. */
+  background: transparent;
+  box-shadow: none;
+  color: var(--dsw-alias-label-primary);
+  z-index: 1100;
+}
+
+html body [class*='_list_4ub78_'] [class*='_material_ri079_'] {
+  box-shadow: none;
+}
+
+html body [class*='_portal_4ub78_'] {
+  position: fixed;
+  z-index: 1100;
+  max-width: min(360px, calc(100vw - 16px));
+}
+
+html body [class*='_scrollable_4ub78_'] {
+  max-height: min(calc(100dvh - 24px), 640px);
+}
+
+html body [class*='_viewport_4ub78_'] {
+  min-height: 0;
+}
+
+/* Feature menu shells (same material, one consistent radius). */
+html body [class*='moreMenu'],
+html body [class*='signedOutMenu'],
+html body [class*='viewsMoreMenu'],
+html body [class*='viewOptionsMenu'],
+html body [class*='zoomMenu'] {
+  border-radius: var(--pui-overlay-menu-radius);
+  padding: var(--pui-overlay-menu-pad);
+  background: transparent;
+  box-shadow: none;
+}
+
+/* ---- menu rows ------------------------------------------------------ */
+html body [class*='_itemWrap_4ub78_'] {
+  position: relative;
+}
+
+html body [class*='_item_4ub78_'],
+html body [class~='_7KE1Ra_option'],
+html body [class~='_7KE1Ra_option'],
+html body [class~='_7KE1Ra_cell'],
+html body [class~='_3e4SsG_item'] {
+  box-sizing: border-box;
+  min-height: var(--pui-overlay-item-height);
+  border: 0;
+  border-radius: var(--pui-overlay-item-radius);
+  padding: 6px 10px;
+  gap: var(--pui-space-sm);
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color var(--pui-duration-press) var(--pui-ease-out),
+    color var(--pui-duration-press) var(--pui-ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+html body [class*='_item_4ub78_'][class*='_itemWrap_4ub78_'],
+html body [class*='_item_4ub78_'] [class*='_itemWrap_4ub78_'] {
+  border-radius: var(--pui-overlay-item-radius);
+}
+
+html body [class*='_item_4ub78_']:is([aria-checked='true'], [aria-selected='true'], [class*='_selected_4ub78_']) {
+  background: var(--pui-overlay-selected);
+  color: var(--dsw-alias-label-primary);
+}
+
+html body [class*='_selectedFill_4ub78_'] {
+  background: var(--pui-overlay-selected);
+}
+
+html body [class*='_item_4ub78_']:focus-visible,
+html body [class~='_7KE1Ra_option']:focus-visible,
+html body [class~='_7KE1Ra_cell']:focus-visible,
+html body [class~='_3e4SsG_item']:focus-visible,
+html body [role='menuitem']:focus-visible,
+html body [role='menuitemradio']:focus-visible,
+html body [role='menuitemcheckbox']:focus-visible,
+html body [role='option']:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color, var(--pui-accent-sky));
+  outline-offset: -2px;
+}
+
+html body [class*='_item_4ub78_']:disabled,
+html body [class~='_7KE1Ra_option']:disabled,
+html body [class~='_7KE1Ra_cell']:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  color: var(--dsw-alias-label-dimmed);
+}
+
+html body [class*='_itemIcon_4ub78_'],
+html body [class*='_3e4SsG_itemIcon'] {
+  color: var(--dsw-alias-menu-icon);
+  width: 16px;
+  height: 16px;
+}
+
+html body [class*='_itemIcon_4ub78_'] svg {
+  width: 16px;
+  height: 16px;
+}
+
+html body [class*='_itemLabel_4ub78_'],
+html body [class*='_3e4SsG_itemName'] {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 400;
+}
+
+html body [class*='_item_4ub78_']:is([class*='_selected_4ub78_'], [aria-checked='true'])
+  [class*='_itemLabel_4ub78_'] {
+  font-weight: 500;
+}
+
+html body [class*='_check_4ub78_'],
+html body [class*='_7KE1Ra_check'] {
+  color: var(--dsw-alias-state-business-primary);
+  flex: 0 0 16px;
+}
+
+html body [class*='_check_4ub78_'] svg,
+html body [class*='_7KE1Ra_check'] svg {
+  width: 14px;
+  height: 14px;
+}
+
+html body [class*='_danger_4ub78_'],
+html body [class*='_danger_4ub78_'] [class*='_itemIcon_4ub78_'] {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+html body [class*='_label_4ub78_'],
+html body [class*='_3e4SsG_sectionTitle'],
+html body [class*='_3e4SsG_groupTitle'] {
+  padding: 6px 10px 4px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 16px;
+  text-transform: none;
+}
+
+html body [class*='_separator_4ub78_'] {
+  height: 1px;
+  margin: var(--pui-space-xs) 6px;
+  background: var(--dsw-alias-border-l1);
+}
+
+html body [class*='_shortcut_4ub78_'] [class*='_shortcutKeys_4ub78_'],
+html body [class*='_shortcutKeys_4ub78_'] {
+  color: var(--dsw-alias-label-caption);
+  font-family: var(--pui-font-mono);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  line-height: 16px;
+}
+
+html body [class*='_footer_4ub78_'] {
+  margin-top: var(--pui-space-xs);
+  padding-top: var(--pui-space-xs);
+  border-top: 1px solid var(--dsw-alias-border-l1);
+}
+
+html body [class*='_submenu_4ub78_'] {
+  left: calc(100% + 8px);
+  border-radius: var(--pui-overlay-menu-radius);
+  min-width: 168px;
+}
+
+/* Hover only where hovering is a real input modality. */
+@media (hover: hover) {
+  html body [class*='_item_4ub78_']:hover:not(:disabled),
+  html body [class~='_7KE1Ra_option']:hover:not(:disabled),
+  html body [class~='_7KE1Ra_option']:hover:not(:disabled),
+  html body [class~='_7KE1Ra_cell']:hover:not(:disabled),
+  html body [class~='_3e4SsG_item']:hover:not(:disabled),
+  html body [role='menuitem']:hover:not(:disabled),
+  html body [role='option']:hover:not(:disabled) {
+    background: var(--dsw-alias-interactive-bg-hover);
+  }
+
+  html body [class*='_danger_4ub78_']:hover:not(:disabled) {
+    background: var(--pui-overlay-danger);
+  }
+
+  html body [class*='VOzbGW_navCell']:hover:not([class*='VOzbGW_active']) {
+    background: var(--dsw-alias-interactive-bg-hover);
+    color: var(--dsw-alias-label-primary);
+  }
+
+  html body [class*='_close_o6lrb_']:hover,
+  html body [class*='VOzbGW_close']:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+    color: var(--dsw-alias-label-primary);
+  }
+
+  html body [class*='_7KE1Ra_trigger']:hover:not(:disabled),
+  html body [class*='_7KE1Ra_searchClear']:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+  }
+}
+
+/* ---- model / reasoning menu (7KE1Ra_* anchor-positioned) ------------- */
+html body [class*='_7KE1Ra_menu'] {
+  z-index: 1100;
+  box-sizing: border-box;
+  width: max-content;
+  min-width: min(248px, calc(100vw - 24px));
+  max-width: min(420px, calc(100vw - 24px));
+  max-height: min(360px, calc(100dvh - 96px));
+  padding: var(--pui-overlay-menu-pad);
+  border: 0;
+  border-radius: var(--pui-overlay-menu-radius);
+  background: transparent;
+  box-shadow: none;
+  color: var(--dsw-alias-label-primary);
+  overflow: hidden;
+}
+
+html body [class*='_7KE1Ra_cellValue'] {
+  color: var(--dsw-alias-label-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+html body [class*='_7KE1Ra_cellChevron'],
+html body [class*='_7KE1Ra_chevron'] {
+  color: var(--dsw-alias-menu-icon);
+}
+
+html body [class*='_7KE1Ra_status'],
+html body [class*='_7KE1Ra_empty'] {
+  padding: var(--pui-space-sm) var(--pui-space-md);
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+html body [class*='_7KE1Ra_error'] {
+  border-radius: var(--pui-radius-md);
+  background: var(--dsw-alias-interactive-bg-hover-danger);
+  color: var(--dsw-alias-state-error-primary);
+  font-size: 11.5px;
+  line-height: 17px;
+}
+
+html body [class*='_7KE1Ra_warning'] {
+  border-radius: var(--pui-radius-md);
+  background: var(--dsw-alias-state-warn-tertiary);
+  color: var(--dsw-alias-state-warn-label);
+  font-size: 11.5px;
+  line-height: 17px;
+}
+
+html body [class*='_7KE1Ra_search'] {
+  border-radius: var(--pui-radius-sm);
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+html body [class*='_7KE1Ra_groups'] {
+  overscroll-behavior: contain;
+}
+
+/* ---- slash / command surface (3e4SsG_* — dsh-client-ui-input-trigger) -
+ * This one is not a portal: it is absolutely positioned above the composer
+ * and must never exceed the composer width. */
+html body [class*='_3e4SsG_menu'] {
+  z-index: 100;
+  box-sizing: border-box;
+  max-height: min(400px, 52dvh);
+  padding: var(--pui-overlay-menu-pad);
+  border: 0;
+  border-radius: var(--pui-radius-card);
+  background: transparent;
+  box-shadow: none;
+  color: var(--dsw-alias-label-primary);
+  overflow: hidden;
+}
+
+html body [class*='_3e4SsG_menu']::after {
+  background: linear-gradient(to bottom, transparent, var(--pui-overlay-menu-fill));
+}
+
+html body [class*='_3e4SsG_viewport'] {
+  overscroll-behavior: contain;
+  min-height: 0;
+}
+
+html body [class~='_3e4SsG_item'][class*='_3e4SsG_active'],
+html body [class~='_3e4SsG_item'][aria-selected='true'] {
+  background: var(--pui-overlay-selected);
+}
+
+html body [class*='_3e4SsG_itemName'] {
+  font-weight: 500;
+}
+
+html body [class*='_3e4SsG_itemAlias'] {
+  color: var(--dsw-alias-label-caption);
+  font-family: var(--pui-font-mono);
+  font-size: 11px;
+}
+
+html body [class*='_3e4SsG_itemDescription'] {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+}
+
+html body [class*='_3e4SsG_drill'] {
+  border-radius: var(--pui-radius-xs);
+  color: var(--dsw-alias-menu-icon);
+}
+
+html body [class*='_3e4SsG_crumbs'] {
+  border-bottom: 1px solid var(--dsw-alias-border-l1);
+  margin-bottom: var(--pui-space-xs);
+  padding: var(--pui-space-xs);
+}
+
+html body [class*='_3e4SsG_crumb'] {
+  border-radius: var(--pui-radius-xs);
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+}
+
+html body [class*='_3e4SsG_crumbCurrent'] {
+  color: var(--dsw-alias-label-primary);
+}
+
+/* ---------------------------------------------------------------------
+ * 5. Tooltips
+ * ------------------------------------------------------------------- */
+html body [class*='_bubble_44yfq_'],
+html body [role='tooltip'] {
+  z-index: 1300;
+  max-width: min(320px, calc(100vw - 24px));
+  padding: 5px 9px;
+  border: 0;
+  border-radius: var(--pui-radius-sm);
+  background: var(--dsw-alias-tooltip-bg);
+  color: var(--pui-text-primary);
+  font-size: 12px;
+  line-height: 18px;
+  letter-spacing: 0.005em;
+  box-shadow: var(--dsw-shadow-lv2);
+  pointer-events: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html body [class*='_bubble_44yfq_'][data-has-shortcut] {
+  padding-inline-end: 6px;
+}
+
+html body [class*='_label_44yfq_'] {
+  min-width: 0;
+}
+
+html body [class*='_key_38b9q_'],
+html body [class*='_joined_38b9q_'] {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: var(--pui-radius-xs);
+  background: var(--dsw-alias-tooltip-key-bg);
+  color: var(--dsw-alias-tooltip-label, var(--pui-text-primary));
+  font-family: var(--pui-font-mono);
+  font-size: 10.5px;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------------
+ * 6. Toasts
+ * ------------------------------------------------------------------- */
+html body [class*='_toast_l6cvn_'],
+html body [role='alert'][class*='_toast'] {
+  top: calc(40px + var(--pui-safe-top));
+  z-index: 1400;
+  box-sizing: border-box;
+  max-width: min(640px, calc(100vw - 32px));
+  padding: 12px 16px;
+  gap: var(--pui-space-md);
+  border: 0;
+  border-radius: var(--pui-radius-input);
+  background: var(--dsw-alias-toast-bg);
+  color: var(--dsw-alias-toast-label);
+  font-size: 13.5px;
+  line-height: 21px;
+  box-shadow: var(--dsw-shadow-lv3);
+  --dsw-elevation-stroke-color: var(--pui-border-hover);
+}
+
+html body [class*='_icon_l6cvn_'] {
+  color: var(--dsw-alias-state-warn-primary);
+}
+
+html body [class*='_icon_l6cvn_'][class*='_success_l6cvn_'] {
+  color: var(--dsw-alias-state-success-primary);
+}
+
+html body [class*='_text_l6cvn_'] {
+  min-width: 0;
+  color: var(--dsw-alias-toast-label);
+}
+
+html body [class*='_action_l6cvn_'] {
+  margin-inline: var(--pui-space-xs);
+  border: 0;
+  background: none;
+  color: var(--dsw-alias-link);
+  font: inherit;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--dsw-alias-link) 45%, transparent);
+  text-underline-offset: 3px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+@media (hover: hover) {
+  html body [class*='_action_l6cvn_']:hover {
+    text-decoration-color: currentColor;
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * 7. Skeletons — honest loading placeholders, never fake percentages
+ * ------------------------------------------------------------------- */
+html body :is(
+    [class*='_skeletonBar'],
+    [class*='_skeletonFill'],
+    [class*='_skeletonDot'],
+    [class*='_skeletonTitle'],
+    [class*='_skeletonHeading'],
+    [class*='_skeletonText'],
+    [class*='_skeletonDescription'],
+    [class*='_skeletonIcon']
+  ) {
+  background: var(--dsw-alias-bg-skeleton);
+  border-radius: var(--pui-radius-xs);
+}
+
+html body :is([class*='_skeletonTitle'], [class*='_skeletonHeading'], [class*='_skeletonIcon']) {
+  border-radius: var(--pui-radius-sm);
+}
+
+html body :is([class*='_skeletonBar'], [class*='_skeletonFill']) {
+  animation: pui-skeleton-pulse 1.8s var(--pui-ease-standard) infinite;
+}
+
+@keyframes pui-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html body :is([class*='_skeletonBar'], [class*='_skeletonFill']) {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * 8. Empty / no-result / offline / error panels
+ * ------------------------------------------------------------------- */
+html body :is(
+    [class*='_empty'],
+    [class*='_emptyState'],
+    [class*='_emptyLine'],
+    [class*='_emptyTitle']
+  ) {
+  color: var(--dsw-alias-label-tertiary);
+}
+
+html body :is(
+    [class*='_emptyState'],
+    [class*='_empty'],
+    [class*='_candidateEmpty'],
+    [class*='_modelEmpty']
+  ):not(button) {
+  font-size: 13px;
+  line-height: 20px;
+}
+
+html body :is([class*='_emptyIcon'], [class*='_emptyStateIcon']) {
+  color: var(--dsw-alias-label-caption);
+  opacity: 0.8;
+}
+
+html body :is([class*='_emptyTitle']) {
+  color: var(--dsw-alias-label-secondary);
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+html body :is([class*='_emptyAction'], [class*='_emptyStateAction']) {
+  min-height: 32px;
+  border-radius: var(--pui-radius-sm);
+  padding: 4px 10px;
+  color: var(--dsw-alias-label-primary);
+  font-size: 12.5px;
+}
+
+@media (hover: hover) {
+  html body :is([class*='_emptyAction'], [class*='_emptyStateAction']):hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+  }
+}
+
+/* Error lines and error banners: colour + weight, never colour alone — DSH
+ * pairs them with an icon and text. */
+html body :is([class*='toastError'], [class*='_7KE1Ra_error'], [class*='_errorText']) {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+html body :is([class*='toastError'], [class*='toastSuccess']) {
+  border-radius: var(--pui-radius-md);
+}
+
+html body :is([class*='_errorBanner'], [class*='_errorPanel'], [class*='_offline'], [class*='_offlineBanner']) {
+  border-radius: var(--pui-radius-card);
+  border: 1px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 32%, transparent);
+  background: var(--dsw-alias-interactive-bg-hover-danger);
+  color: var(--dsw-alias-state-error-primary);
+  padding: var(--pui-space-md) var(--pui-space-lg);
+}
+
+/* ---------------------------------------------------------------------
+ * 9. Coarse pointers — 44px rows, hit-area expansion, no hover-only actions
+ * ------------------------------------------------------------------- */
+@media (pointer: coarse) {
+  html body [class*='_item_4ub78_'],
+  html body [class~='_7KE1Ra_option'],
+  html body [class~='_7KE1Ra_option'],
+  html body [class~='_7KE1Ra_cell'],
+  html body [class~='_3e4SsG_item'] {
+    min-height: var(--pui-overlay-item-height-touch);
+    padding-block: 10px;
+  }
+
+  /* Small visual buttons (close, search clear) keep a 44px hit target without
+   * growing their painted size. */
+  html body :is([class*='_close_o6lrb_'], [class*='VOzbGW_close'], [class*='_7KE1Ra_searchClear']) {
+    position: relative;
+  }
+
+  html body :is([class*='_close_o6lrb_'], [class*='VOzbGW_close'], [class*='_7KE1Ra_searchClear'])::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: var(--pui-radius-md);
+  }
+
+  html body [class*='_action_l6cvn_'] {
+    min-height: 32px;
+    padding-inline: 4px;
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * 10. Small screens — overlays become sheets, never wider than the viewport
+ * ------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  html body [class*='_root_o6lrb_'] {
+    padding: var(--pui-safe-top) var(--pui-safe-right) var(--pui-safe-bottom) var(--pui-safe-left);
+    align-items: flex-end;
+  }
+
+  html body [class*='_dialog_o6lrb_'] {
+    width: 100%;
+    max-width: 100%;
+    max-height: min(86dvh, 720px);
+    border-radius: var(--pui-radius-panel) var(--pui-radius-panel) 0 0;
+    padding-bottom: calc(var(--pui-space-xl) + var(--pui-safe-bottom));
+  }
+
+  html body [class*='_header_o6lrb_'] {
+    padding: var(--pui-space-lg) var(--pui-space-md) var(--pui-space-sm) var(--pui-space-lg);
+  }
+
+  html body [class*='_body_o6lrb_'],
+  html body [class*='_description_o6lrb_'],
+  html body [class*='_footer_o6lrb_'] {
+    padding-inline: var(--pui-space-lg);
+  }
+
+  html body [class*='VOzbGW_overlay'] {
+    padding: var(--pui-safe-top) 0 0;
+    align-items: flex-end;
+  }
+
+  html body [class*='VOzbGW_panel'] {
+    /* Bottom sheet: nav becomes a horizontal tab strip above the content, so
+     * the panel itself must switch from desktop row layout to column. */
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+    height: min(88dvh, 800px);
+    border-radius: var(--pui-radius-panel) var(--pui-radius-panel) 0 0;
+  }
+
+  html body [class~='VOzbGW_nav'] {
+    width: 100%;
+    flex: none;
+    flex-direction: row;
+    gap: var(--pui-space-xs);
+    padding: var(--pui-space-sm) var(--pui-space-sm) 0;
+    border-right: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  html body [class~='VOzbGW_nav']::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* The settings title stays on the sheet: it is the accessible name of the
+   * dialog (aria-labelledby) and gives the sheet an identity. */
+  html body [class*='VOzbGW_navTitle'] {
+    flex: none;
+    padding: 0 8px 0 4px;
+    font-size: 15px;
+    line-height: 20px;
+    align-self: center;
+  }
+
+  html body [class*='VOzbGW_navList'] {
+    flex-direction: row;
+    gap: var(--pui-space-xs);
+  }
+
+  html body [class*='VOzbGW_navCell'] {
+    flex: none;
+    min-height: var(--pui-touch-target);
+    padding-inline: var(--pui-space-md);
+    white-space: nowrap;
+  }
+
+  html body [class*='VOzbGW_navCell'][class*='VOzbGW_active'] {
+    box-shadow: none;
+    background: var(--dsw-specific-sidebar-nav-item-active);
+  }
+
+  html body [class*='VOzbGW_content'] {
+    flex: 1;
+    min-height: 0;
+  }
+
+  html body [class*='VOzbGW_header'] {
+    height: auto;
+    padding: var(--pui-space-md) var(--pui-space-md) var(--pui-space-xs) var(--pui-space-lg);
+  }
+
+  html body [class*='VOzbGW_options'] {
+    padding: 0 var(--pui-space-md) calc(var(--pui-space-xl) + var(--pui-safe-bottom));
+  }
+
+  html body [class*='_list_4ub78_'] {
+    border-radius: var(--pui-radius-card);
+  }
+
+  html body [class*='_7KE1Ra_menu'] {
+    max-width: calc(100vw - 16px);
+    max-height: min(360px, calc(100dvh - var(--pui-safe-top) - var(--pui-safe-bottom) - 96px));
+  }
+
+  html body [class*='_3e4SsG_menu'] {
+    max-height: min(360px, 46dvh);
+  }
+
+  /* The toast sits under the status bar, not over the header controls. */
+  html body [class*='_toast_l6cvn_'] {
+    top: calc(12px + var(--pui-safe-top));
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * 11. Light theme refinements (tokens already flip; these add contrast)
+ * ------------------------------------------------------------------- */
+html body:not([data-ds-dark-theme]) :is([class*='_item_4ub78_'], [class~='_3e4SsG_item']) {
+  color: var(--dsw-alias-label-primary);
+}
+
+html body:not([data-ds-dark-theme]) :is([class*='_label_4ub78_'], [class*='_3e4SsG_sectionTitle']) {
+  color: var(--dsw-alias-label-tertiary);
+}
+
+
+/* ---------------------------------------------------------------------
+ * 12. Sidebar / panel empty states (observed hashes)
+ * ------------------------------------------------------------------- */
+/* `bhn1Oq_empty` (sidebar session list "无匹配会话") and its action. */
+html body [class*='bhn1Oq_empty'] {
+  padding: 28px 12px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12.5px;
+  line-height: 19px;
+  text-align: center;
+}
+
+html body [class*='bhn1Oq_emptyAction'] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  margin: 6px auto 0;
+  padding: 0 10px;
+  border-radius: var(--pui-radius-sm);
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--pui-duration-press) var(--pui-ease-out),
+    color var(--pui-duration-press) var(--pui-ease-out);
+}
+
+@media (hover: hover) {
+  html body [class*='bhn1Oq_emptyAction']:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+
+html body [class*='bhn1Oq_emptyAction']:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color, var(--pui-accent-sky));
+  outline-offset: 2px;
+}

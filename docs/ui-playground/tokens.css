@@ -1,0 +1,206 @@
+/**
+ * Palace Design System — Soft Minimal Dark UI Tokens
+ * Architecture: 3-Tier Governance (Primitive -> Semantic -> Component)
+ * Principle: Hierarchy through structure, typography, and surface luminance — never pure black (#000000) or heavy drop shadows.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* ==========================================================================
+   * TIER 1: PRIMITIVE TOKENS (Raw Palette, Scales & Geometry)
+   * Do not reference primitive tokens directly in business components.
+   * ========================================================================== */
+
+  /* Neutral Luminance Scale (5-Level Dark Surface Palette) */
+  --prim-neutral-950: #141414; /* Canvas base (#121212 ~ #171717) */
+  --prim-neutral-900: #1E1E1E; /* Surface 1 (#1C1C1C ~ #202020) */
+  --prim-neutral-850: #262626; /* Surface 2 (#242424 ~ #282828) */
+  --prim-neutral-800: #2F2F2F; /* Surface 3 (#2E2E2E ~ #303030) */
+  --prim-neutral-700: #3A3A3A; /* Surface 4 (#383838 ~ #404040) */
+  --prim-neutral-600: #4A4A4F;
+  --prim-neutral-500: #6E6E77;
+  --prim-neutral-400: #A1A1AA;
+  --prim-neutral-100: #E5E5E5;
+  --prim-neutral-50:  #F4F4F6;
+
+  /* Low-Saturation Semantic Accents */
+  --prim-sky-400:     #38BDF8;
+  --prim-sky-500:     #0EA5E9;
+  --prim-sky-alpha-15: rgba(56, 189, 248, 0.14);
+  --prim-sky-alpha-30: rgba(56, 189, 248, 0.28);
+  --prim-sky-alpha-50: rgba(56, 189, 248, 0.50);
+
+  --prim-emerald-500: #10B981;
+  --prim-emerald-alpha-15: rgba(16, 185, 129, 0.14);
+  --prim-emerald-alpha-30: rgba(16, 185, 129, 0.28);
+
+  --prim-amber-500:   #F59E0B;
+  --prim-amber-alpha-15: rgba(245, 158, 11, 0.14);
+  --prim-amber-alpha-30: rgba(245, 158, 11, 0.28);
+
+  --prim-rose-500:    #F43F5E;
+  --prim-rose-300:    #FDA4AF; /* Accessible small error text on elevated surfaces */
+  --prim-rose-alpha-15: rgba(244, 63, 94, 0.14);
+  --prim-rose-alpha-30: rgba(244, 63, 94, 0.28);
+
+  /* White Alpha Scale for Precision 1px Borders */
+  --prim-white-a05: rgba(255, 255, 255, 0.05);
+  --prim-white-a07: rgba(255, 255, 255, 0.07);
+  --prim-white-a10: rgba(255, 255, 255, 0.10);
+  --prim-white-a12: rgba(255, 255, 255, 0.12);
+  --prim-white-a20: rgba(255, 255, 255, 0.20);
+
+  /* 4px Base Spacing Grid */
+  --prim-space-1: 4px;   /* XS */
+  --prim-space-2: 8px;   /* SM */
+  --prim-space-3: 12px;  /* MD */
+  --prim-space-4: 16px;  /* LG */
+  --prim-space-6: 24px;  /* XL */
+  --prim-space-8: 32px;  /* 2XL */
+
+  /* Concentric Corner Radius Scale */
+  --prim-radius-xs:   6px;
+  --prim-radius-sm:   8px;
+  --prim-radius-md:   12px;
+  --prim-radius-lg:   16px;
+  --prim-radius-xl:   20px;
+  --prim-radius-2xl:  24px;
+  --prim-radius-full: 9999px;
+
+  /* ==========================================================================
+   * TIER 2: SEMANTIC TOKENS (Role-Based Surfaces, Text, Borders & Typography)
+   * ========================================================================== */
+
+  /* 5-Level Surface Hierarchy */
+  --bg-canvas:   var(--prim-neutral-950); /* Level 0: Page root canvas (#141414) */
+  --surface-1:   var(--prim-neutral-900); /* Level 1: Workspace shell, sidebar (#1E1E1E) */
+  --surface-2:   var(--prim-neutral-850); /* Level 2: Floating bar, bottom nav, dialog base (#262626) */
+  --surface-3:   var(--prim-neutral-800); /* Level 3: Cards, chat bubble, inputs, default button (#2F2F2F) */
+  --surface-4:   var(--prim-neutral-700); /* Level 4: Hover/Active interactive elevation (#3A3A3A) */
+
+  /* Glass fallback & progressive enhancement (restricted strictly to sticky topbar/floating dock) */
+  --surface-glass-fallback: rgba(38, 38, 38, 0.94);
+
+  /* Text Hierarchy (WCAG AA compliant) */
+  --text-primary:   var(--prim-neutral-100); /* #E5E5E5 — Contrast >= 12.8:1 on canvas */
+  --text-secondary: var(--prim-neutral-400); /* #A1A1AA — Contrast >= 6.8:1 on canvas */
+  --text-muted:     var(--prim-neutral-500); /* #6E6E77 — Placeholders, disabled */
+  --text-inverse:   var(--prim-neutral-950); /* #141414 — Text on high-contrast primary button */
+
+  /* Semantic Status Colors */
+  --accent-info:        var(--prim-sky-400);
+  --accent-info-bg:     var(--prim-sky-alpha-15);
+  --accent-info-border: var(--prim-sky-alpha-30);
+
+  --accent-success:        var(--prim-emerald-500);
+  --accent-success-bg:     var(--prim-emerald-alpha-15);
+  --accent-success-border: var(--prim-emerald-alpha-30);
+
+  --accent-warning:        var(--prim-amber-500);
+  --accent-warning-bg:     var(--prim-amber-alpha-15);
+  --accent-warning-border: var(--prim-amber-alpha-30);
+
+  --accent-danger:        var(--prim-rose-500);
+  --text-danger:          var(--prim-rose-300); /* Semantic error label, AA at Surface 3 */
+  --accent-danger-bg:     var(--prim-rose-alpha-15);
+  --accent-danger-border: var(--prim-rose-alpha-30);
+
+  /* Border Hierarchy (1px solid) */
+  --border-divider:       var(--prim-white-a05); /* Subtle section divider */
+  --border-default:       var(--prim-white-a07); /* Default card/container border */
+  --border-top-highlight: var(--prim-white-a10); /* Top edge specular highlight */
+  --border-hover:         var(--prim-white-a12); /* Interactive hover border */
+  --border-active:        var(--prim-white-a20); /* Selected / active border */
+  --ring-focus:           var(--prim-sky-alpha-50); /* Keyboard focus-visible ring */
+
+  /* Spacing Semantic Aliases */
+  --space-xs:  var(--prim-space-1); /* 4px */
+  --space-sm:  var(--prim-space-2); /* 8px */
+  --space-md:  var(--prim-space-3); /* 12px */
+  --space-lg:  var(--prim-space-4); /* 16px */
+  --space-xl:  var(--prim-space-6); /* 24px */
+  --space-2xl: var(--prim-space-8); /* 32px */
+
+  /* Typography Stacks */
+  --font-sans: Inter, "SF Pro Display", "PingFang SC", "Noto Sans CJK SC", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Typography Scale (Strictly Converged) */
+  --text-page-title-size:   24px;
+  --text-page-title-weight: 600;
+  --text-page-title-lh:     1.25;
+
+  --text-section-title-size:   17px;
+  --text-section-title-weight: 600;
+  --text-section-title-lh:     1.35;
+
+  --text-body-size:   15px;
+  --text-body-weight: 400;
+  --text-body-lh:     1.6;
+
+  --text-btn-size:    13.5px;
+  --text-btn-weight:  500;
+  --text-btn-lh:      1.3;
+
+  --text-meta-size:   12.5px;
+  --text-meta-weight: 400;
+  --text-meta-lh:     1.4;
+
+  --text-badge-size:   11.5px;
+  --text-badge-weight: 500;
+  --text-badge-lh:     1.2;
+
+  /* Motion & Timing Tokens */
+  --ease-press:  cubic-bezier(0.2, 0, 0, 1);
+  --ease-panel:  cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-press:   120ms;
+  --dur-hover:   150ms;
+  --dur-panel:   220ms;
+  --dur-modal:   240ms;
+
+  /* Safe-Area Insets (Single-Source Calculation) */
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left, 0px);
+  --safe-right:  env(safe-area-inset-right, 0px);
+
+  /* ==========================================================================
+   * TIER 3: COMPONENT TOKENS (Concentric Geometry & Touch Ergonomics)
+   * ========================================================================== */
+
+  /* Apple HIG Minimum Touch Target */
+  --touch-target-min: 44px;
+
+  /* Concentric Formula: Outer Radius = Inner Radius + Padding */
+  --comp-dock-radius-outer: 24px;
+  --comp-dock-padding:      8px;
+  --comp-dock-radius-inner: 16px; /* 24px - 8px = 16px */
+
+  --comp-composer-radius-outer: 24px;
+  --comp-composer-padding:      12px;
+  --comp-composer-radius-inner: 12px; /* 24px - 12px = 12px */
+
+  --comp-card-radius:    var(--prim-radius-lg);   /* 16px */
+  --comp-card-padding:   var(--space-lg);         /* 16px */
+  --comp-card-inner-rad: var(--prim-radius-sm);   /* 8px */
+
+  --comp-btn-radius:     var(--prim-radius-md);   /* 12px */
+  --comp-pill-radius:    var(--prim-radius-full); /* 9999px */
+}
+
+/* Reduced Motion Global Compliance */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-press: 0ms;
+    --dur-hover: 0ms;
+    --dur-panel: 0ms;
+    --dur-modal: 0ms;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

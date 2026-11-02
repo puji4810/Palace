@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#171717" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>初始化 · Palace</title>
+    <link rel="icon" href="/__palace/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/__palace/app.css" />
+  </head>
+  <body data-page="setup">
+    <main class="shell">
+      <header class="brand"><span class="mark">P</span><span>Palace</span></header>
+
+      <section class="card">
+        <h1>初始化 Palace</h1>
+        <p class="lead">一次性设置：绑定验证器、创建通行密钥并保存恢复码。</p>
+
+        <div class="stepper" id="stepper">
+          <div class="step active" data-step="1"><span class="step-dot">1</span><span>凭证</span></div>
+          <div class="step-line"></div>
+          <div class="step" data-step="2"><span class="step-dot">2</span><span>验证器</span></div>
+          <div class="step-line"></div>
+          <div class="step" data-step="3"><span class="step-dot">3</span><span>通行密钥</span></div>
+          <div class="step-line"></div>
+          <div class="step" data-step="4"><span class="step-dot">4</span><span>恢复码</span></div>
+        </div>
+
+        <div id="step-1">
+          <p class="lead">从服务器管理通道取得的绑定凭证只可使用一次，有效期约 10 分钟。</p>
+          <form id="token-form" class="stack" autocomplete="off">
+            <label class="field">
+              <span>一次性绑定凭证</span>
+              <input id="setup-token" class="mono" placeholder="PALACE-XXXX-XXXX-XXXX" autocapitalize="characters" spellcheck="false" autocomplete="off" required />
+            </label>
+            <button class="btn primary" type="submit">继续</button>
+          </form>
+          <p class="status" id="status" role="status" aria-live="polite"></p>
+        </div>
+
+        <div id="step-2" class="hidden">
+          <p class="lead">用验证器 App 扫描二维码，然后输入当前 6 位验证码。使用同一台手机时可复制下方密钥手动添加。</p>
+          <div class="qr" id="qr"></div>
+          <p class="hint center">手动录入密钥</p>
+          <div class="secret" id="totp-secret"></div>
+          <button class="link" id="copy-secret" type="button">复制密钥</button>
+          <form id="totp-form" class="stack mt" autocomplete="off">
+            <label class="field">
+              <span>当前验证码</span>
+              <input
+                id="totp-code"
+                class="mono"
+                inputmode="numeric"
+                maxlength="7"
+                placeholder="123456"
+                autocomplete="one-time-code"
+                required
+              />
+            </label>
+            <button class="btn primary" type="submit">确认验证码</button>
+          </form>
+          <p class="status" id="status-2" role="status" aria-live="polite"></p>
+        </div>
+
+        <div id="step-3" class="hidden">
+          <p class="lead">创建一张通行密钥，保存在浏览器或手机的密钥管理器中。以后用指纹、面容或设备 PIN 登录。</p>
+          <form id="passkey-form" class="stack" autocomplete="off">
+            <label class="field">
+              <span>名称（可选）</span>
+              <input id="passkey-name" placeholder="例如：我的手机" maxlength="60" autocomplete="off" />
+            </label>
+            <button class="btn primary" type="submit">创建通行密钥</button>
+          </form>
+          <div class="notice" id="passkey-notice" hidden></div>
+          <p class="status" id="status-3" role="status" aria-live="polite"></p>
+        </div>
+
+        <div id="step-4" class="hidden">
+          <p class="lead">这些恢复码只显示一次。请离线保存到密码管理器或纸上，每张只能使用一次。</p>
+          <div class="codes" id="recovery-codes"></div>
+          <div class="notice warn">恢复码可以重建访问权，但没有通行密钥便捷。不要截图上传，也不要放在可公开访问的位置。</div>
+          <label class="check">
+            <input type="checkbox" id="saved-codes" />
+            <span>我已将这些恢复码保存在离线位置，并理解丢失所有凭据后只能由服务器管理员重置。</span>
+          </label>
+          <button class="btn primary mt" id="finish-setup" type="button" disabled>进入 Palace</button>
+          <p class="status" id="status-4" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <footer class="foot">绑定完成后，公开的初始化入口会自动关闭。</footer>
+    </main>
+    <script type="module" src="/__palace/app.js"></script>
+  </body>
+</html>

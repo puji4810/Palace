@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#171717" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>登录 · Palace</title>
+    <link rel="icon" href="/__palace/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/__palace/app.css" />
+  </head>
+  <body data-page="login">
+    <main class="shell">
+      <header class="brand"><span class="mark">P</span><span>Palace</span></header>
+
+      <section class="card">
+        <h1>登录</h1>
+        <p class="lead">用通行密钥快速进入，或使用备用方式恢复访问。</p>
+
+        <button class="btn primary" id="passkey-login" type="button">使用通行密钥登录</button>
+        <p class="hint" id="passkey-hint"></p>
+
+        <div class="divider"><span>或</span></div>
+
+        <form id="totp-form" class="stack" autocomplete="off">
+          <label class="field">
+            <span>验证器验证码</span>
+            <input
+              id="totp-code"
+              class="mono"
+              inputmode="numeric"
+              maxlength="7"
+              placeholder="123456"
+              autocomplete="one-time-code"
+              required
+            />
+          </label>
+          <button class="btn" type="submit">使用验证码（仅恢复）</button>
+        </form>
+
+        <p class="note">验证码与恢复码只进入受限恢复流程：需要重新创建通行密钥，之后才能访问 Palace 数据。</p>
+
+        <button class="link" id="recovery-toggle" type="button">使用恢复码</button>
+
+        <form id="recovery-form" class="stack hidden" autocomplete="off">
+          <label class="field">
+            <span>恢复码</span>
+            <textarea
+              id="recovery-code"
+              class="mono"
+              rows="2"
+              placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-X"
+              autocapitalize="characters"
+              spellcheck="false"
+              autocomplete="off"
+              enterkeyhint="done"
+              required
+            ></textarea>
+          </label>
+          <button class="btn" type="submit">使用恢复码</button>
+        </form>
+
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+      </section>
+
+      <footer class="foot"><span id="foot-state">Palace 私有入口</span></footer>
+    </main>
+    <script type="module" src="/__palace/app.js"></script>
+  </body>
+</html>

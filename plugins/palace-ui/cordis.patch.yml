@@ -1,0 +1,4 @@
+- insert:
+    - id: palace-ui
+      name: '@local/palace-ui'
+      config: {}

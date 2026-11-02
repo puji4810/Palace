@@ -1,0 +1,561 @@
+/* =====================================================================
+ * palace-ui / 40 · Palace shell components
+ * =====================================================================
+ * Styles for the Lead-owned shell contributions: brand slots, command palette
+ * and the Palace settings row. Component tokens are local (`--pui-c-*`) and
+ * resolve from the shared layer; no literal palette values appear below.
+ * ===================================================================== */
+
+/* ---------------------------------------------------------------------
+ * Brand mark + wordmark (sidebar slots, hero mark)
+ * --------------------------------------------------------------------- */
+html body .pui-mark {
+  display: block;
+  color: var(--dsw-alias-brand-primary, var(--pui-text-primary));
+}
+
+html body .pui-brand-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--dsw-alias-label-primary, var(--pui-text-primary));
+  font-family: var(--pui-font-ui);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+html body .pui-brand-name__text {
+  white-space: nowrap;
+}
+
+html body .pui-brand-name__badge {
+  padding: 1px 4px;
+  border: 1px solid var(--dsw-alias-border-l2, var(--pui-border-default));
+  border-radius: 4px;
+  color: var(--dsw-alias-label-tertiary, var(--pui-text-tertiary));
+  font-family: var(--pui-font-mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+html body .pui-hero-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dsw-alias-brand-primary, var(--pui-text-primary));
+}
+
+/* ---------------------------------------------------------------------
+ * Command palette — floating overlay above every column
+ * --------------------------------------------------------------------- */
+html body .pui-palette-root {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: max(12vh, 64px) 16px 16px;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+html body .pui-palette-scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.55));
+  pointer-events: auto;
+  animation: pui-fade-in var(--pui-duration-panel) var(--pui-ease-out);
+}
+
+html body .pui-palette {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(600px, calc(100vw - 32px));
+  max-height: min(560px, calc(100dvh - 20vh));
+  overflow: hidden;
+  box-sizing: border-box;
+  color: var(--dsw-alias-label-primary, var(--pui-text-primary));
+  background: var(--pui-surface-2);
+  border: 1px solid var(--pui-border-default);
+  border-top-color: var(--pui-border-hover);
+  border-radius: var(--pui-radius-card);
+  box-shadow: var(--dsw-elevation-prominent);
+  pointer-events: auto;
+  animation: pui-palette-in var(--pui-duration-panel) var(--pui-ease-out);
+}
+
+@keyframes pui-palette-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pui-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+html body .pui-palette-search {
+  display: flex;
+  align-items: center;
+  gap: var(--pui-space-sm);
+  min-height: 52px;
+  padding: 0 var(--pui-space-lg);
+  border-bottom: 1px solid var(--pui-border-divider);
+  flex: none;
+}
+
+html body .pui-palette-search__icon {
+  display: inline-flex;
+  color: var(--dsw-alias-label-tertiary, var(--pui-text-tertiary));
+  flex: none;
+}
+
+html body .pui-palette-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 36px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--dsw-alias-label-primary, var(--pui-text-primary));
+  font-family: var(--pui-font-ui);
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+html body .pui-palette-input::placeholder {
+  color: var(--dsw-alias-label-dimmed, var(--pui-text-muted));
+}
+
+html body .pui-palette-input:focus-visible {
+  outline: none;
+}
+
+html body .pui-palette-search__esc {
+  display: inline-flex;
+  flex: none;
+}
+
+html body .pui-palette-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border: 1px solid var(--pui-border-default);
+  border-radius: 5px;
+  background: var(--pui-surface-3);
+  color: var(--dsw-alias-label-tertiary, var(--pui-text-tertiary));
+  font-family: var(--pui-font-mono);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+html body .pui-palette-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--pui-space-sm);
+  scrollbar-width: thin;
+}
+
+html body .pui-palette-group {
+  padding: 10px var(--pui-space-sm) 4px;
+  color: var(--dsw-alias-label-tertiary, var(--pui-text-tertiary));
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+html body .pui-palette-item {
+  display: flex;
+  align-items: center;
+  gap: var(--pui-space-md);
+  min-height: 40px;
+  padding: 0 var(--pui-space-sm);
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  border-radius: var(--pui-radius-md);
+  color: var(--dsw-alias-label-secondary, var(--pui-text-secondary));
+  font-size: 14px;
+  line-height: 1.4;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color var(--pui-duration-hover) var(--pui-ease-out),
+    color var(--pui-duration-hover) var(--pui-ease-out),
+    border-color var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body .pui-palette-item--active {
+  background: var(--pui-surface-3);
+  border-color: var(--pui-border-default);
+  color: var(--dsw-alias-label-primary, var(--pui-text-primary));
+}
+
+html body .pui-palette-item__icon {
+  display: inline-flex;
+  color: var(--dsw-alias-label-tertiary, var(--pui-text-tertiary));
+  flex: none;
+}
+
+html body .pui-palette-item--active .pui-palette-item__icon {
+  color: var(--dsw-alias-label-secondary, var(--pui-text-secondary));
+}
+
+html body .pui-palette-item__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html body .pui-palette-item__check {
+  display: inline-flex;
+  color: var(--pui-accent-sky);
+  flex: none;
+}
+
+html body .pui-palette-item__hint {
+  color: var(--dsw-alias-label-tertiary, var(--pui-text-tertiary));
+  font-family: var(--pui-font-mono);
+  font-size: 11px;
+  flex: none;
+}
+
+html body .pui-palette-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 36px 16px;
+  text-align: center;
+}
+
+html body .pui-palette-empty__title {
+  color: var(--dsw-alias-label-secondary, var(--pui-text-secondary));
+  font-size: 14px;
+  font-weight: 500;
+}
+
+html body .pui-palette-empty__hint {
+  color: var(--dsw-alias-label-tertiary, var(--pui-text-tertiary));
+  font-size: 12.5px;
+}
+
+html body .pui-palette-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pui-space-sm);
+  min-height: 38px;
+  padding: 0 var(--pui-space-md);
+  border-top: 1px solid var(--pui-border-divider);
+  color: var(--dsw-alias-label-tertiary, var(--pui-text-tertiary));
+  font-size: 11.5px;
+  flex: none;
+}
+
+html body .pui-palette-footer__hints {
+  display: flex;
+  align-items: center;
+  gap: var(--pui-space-md);
+  flex-wrap: wrap;
+}
+
+html body .pui-palette-footer__hints > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+html body .pui-palette-footer__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--dsw-alias-label-tertiary, var(--pui-text-tertiary));
+  font-family: var(--pui-font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.01em;
+}
+
+html body .pui-palette-footer__brand .pui-palette-kbd {
+  font-size: 9.5px;
+}
+
+/* Touch: the palette is a desktop chord, but it must stay usable if opened on
+ * a tablet with a hardware keyboard and tapped. */
+@media (pointer: coarse) {
+  html body .pui-palette-item {
+    min-height: var(--pui-touch-target);
+  }
+}
+
+@media (max-width: 767px) {
+  html body .pui-palette-root {
+    padding: calc(var(--pui-safe-top) + 8px) 8px calc(var(--pui-safe-bottom) + 8px);
+    align-items: stretch;
+  }
+  html body .pui-palette {
+    width: 100%;
+    max-height: none;
+    height: 100%;
+    border-radius: var(--pui-radius-panel);
+  }
+  html body .pui-palette-footer {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * Settings → General → Palace 界面 row
+ * --------------------------------------------------------------------- */
+html body .pui-setting-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--pui-space-lg);
+  padding: 14px 2px;
+  border-top: 1px solid var(--dsw-alias-border-l1, var(--pui-border-divider));
+}
+
+html body .pui-setting-row__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+html body .pui-setting-row__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--dsw-alias-label-primary, var(--pui-text-primary));
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+html body .pui-setting-row__mark {
+  display: inline-flex;
+  color: var(--dsw-alias-label-tertiary, var(--pui-text-tertiary));
+}
+
+html body .pui-setting-row__badge {
+  padding: 0 4px;
+  border: 1px solid var(--dsw-alias-border-l2, var(--pui-border-default));
+  border-radius: 4px;
+  color: var(--dsw-alias-label-tertiary, var(--pui-text-tertiary));
+  font-family: var(--pui-font-mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+html body .pui-setting-row__desc {
+  max-width: 46ch;
+  color: var(--dsw-alias-label-tertiary, var(--pui-text-tertiary));
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+html body .pui-setting-row__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pui-space-sm) var(--pui-space-lg);
+  justify-content: flex-end;
+  flex: none;
+}
+
+html body .pui-segment {
+  display: flex;
+  align-items: center;
+  gap: var(--pui-space-sm);
+}
+
+html body .pui-segment__label {
+  color: var(--dsw-alias-label-tertiary, var(--pui-text-tertiary));
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+html body .pui-segment__track {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background: var(--pui-surface-2);
+  border: 1px solid var(--dsw-alias-border-l2, var(--pui-border-default));
+  border-radius: var(--pui-radius-sm);
+}
+
+html body .pui-segment__option {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary, var(--pui-text-secondary));
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--pui-duration-hover) var(--pui-ease-out),
+    color var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body .pui-segment__option:hover {
+  color: var(--dsw-alias-label-primary, var(--pui-text-primary));
+}
+
+html body .pui-segment__option--on {
+  background: var(--pui-surface-4);
+  border-color: var(--pui-border-hover);
+  color: var(--dsw-alias-label-primary, var(--pui-text-primary));
+}
+
+html body .pui-segment__option:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: 1px;
+}
+
+@media (max-width: 767px) {
+  html body .pui-setting-row {
+    flex-direction: column;
+    gap: var(--pui-space-md);
+  }
+  html body .pui-setting-row__controls {
+    justify-content: flex-start;
+  }
+  html body .pui-segment__option {
+    min-height: 32px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html body .pui-palette,
+  html body .pui-palette-scrim {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * Sidebar footer action (command palette entry)
+ * --------------------------------------------------------------------- */
+html body .pui-footer-action {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-height: 30px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  border-radius: var(--pui-radius-sm);
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary, var(--pui-text-tertiary));
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color var(--pui-duration-hover) var(--pui-ease-out),
+    color var(--pui-duration-hover) var(--pui-ease-out),
+    border-color var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body .pui-footer-action:hover {
+  background: var(--pui-surface-3);
+  border-color: var(--pui-border-default);
+  color: var(--dsw-alias-label-primary, var(--pui-text-primary));
+}
+
+html body .pui-footer-action:active {
+  background: var(--pui-surface-4);
+}
+
+html body .pui-footer-action:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: 1px;
+}
+
+html body .pui-footer-action__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html body .pui-footer-action__kbd {
+  flex: none;
+  color: var(--dsw-alias-label-tertiary, var(--pui-text-tertiary));
+  font-family: var(--pui-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+
+@media (pointer: coarse) {
+  html body .pui-footer-action {
+    min-height: var(--pui-touch-target);
+    min-width: var(--pui-touch-target);
+    justify-content: center;
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * Coarse-pointer hit areas for the settings steppers (Lead layer)
+ * ---------------------------------------------------------------------
+ * These stock controls are 12-24px tall inside a settings row; on touch
+ * pointers the button box is raised to 44x44 with negative margins so the row
+ * does not grow. Header utilities are intentionally left stock: on phones the
+ * Palace mobile shell replaces the header with 44px controls, and at tablet
+ * widths the header row is dense desktop chrome.
+ */
+@media (pointer: coarse) {
+  html body button[aria-label='增大字号'],
+  html body button[aria-label='Increase font size'],
+  html body button[aria-label='减小字号'],
+  html body button[aria-label='Decrease font size'],
+  html body button[aria-label='更多字体设置'],
+  html body button[aria-label='More font settings'] {
+    position: relative;
+    z-index: 3;
+    min-width: var(--pui-touch-target);
+    min-height: var(--pui-touch-target);
+    margin: -6px;
+    box-sizing: border-box;
+  }
+}

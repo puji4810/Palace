@@ -1,0 +1,1242 @@
+/* =====================================================================
+ * palace-ui / 22 · Composer, input area & dock stats
+ * =====================================================================
+ * Soft Minimal Dark for the conversation composer (hero + session variants),
+ * the attachments rail, the queue panel, the drop target and the statistics
+ * dock under the card.
+ *
+ * Depth comes from structure and lightness: surface-3 card, a hairline stroke
+ * drawn as an inset elevation line (no layout cost), soft elevation, and a
+ * restrained sky focus ring on the whole capsule. The primary action is the
+ * light chip with a dark glyph; stop is a neutral chip with a rose square.
+ *
+ * Everything is scoped `html body …` so it outranks the stock single-class
+ * rules regardless of injection order, and every value resolves from the
+ * `--pui-*` / `--dsw-*` token layers (no literal colours).
+ *
+ * DSH 0.2.1-rc.5 selector map (also recorded in docs/palace-ui-components.md):
+ *   Composer seat/stack  wSkVaW_composerSeat, wSkVaW_composerStack,
+ *                        wSkVaW_composerHero
+ *   InputBar             uV2eYG_root, _hero, _card, _cardWorkspaceTrigger,
+ *                        _overlayAnchor, _accessory, _scroll, _grow, _input,
+ *                        _placeholder, _inputDisabled, _pending, _row, _tools,
+ *                        _modes, _trailing, _standardControls, _activity,
+ *                        _activityExpanded, _trailingActive, _add, _select,
+ *                        _primary, _retry, _notice, _dock
+ *   Permission chip      iWlSmW_trigger, _triggerIcon, _triggerLabel,
+ *                        _chevron, _chevronOpen
+ *   Model chip           _7KE1Ra_root, _trigger, _triggerLabel,
+ *                        _triggerEffort, _chevron, _chevronOpen
+ *   Stats pills          bOPqQW_anchor, _pill, _label, _sep
+ *   Context meter        JObwrW_root, _trigger, _track, _fill, _percent
+ *   Attachments rail     _54WpYG_rail, _imageItem, _thumbnail, _remove;
+ *                        JVDQca_root, _rail, _item, _thumbnail, _remove,
+ *                        _arrow, _arrowLeft, _arrowRight;
+ *                        gSkjMW_card, _failed, _icon, _spinner, _body,
+ *                        _retry, _name, _meta, _metaFailed, _remove,
+ *                        _removeFailed, _progressTrack, _progressBar
+ *   Drop target          BInVoG_mask, _wrap, _illustration, _title, _desc
+ *   Queue panel          _7yHdaG_dock, _panel, _header, _lead, _count,
+ *                        _chevron, _list, _row, _attachments, _file,
+ *                        _fileIcon, _fileName, _fileSize, _thumb, _preview,
+ *                        _actions, _status, _action
+ *   Inline chips         q44v1G_reference, q44v1G_textRef; yAWgPa_chip,
+ *                        _marker, _icon, _label, _invalid
+ * ===================================================================== */
+
+/* ---------------------------------------------------------------------
+ * 1. Local component tokens (derived from the shared layers only)
+ * ------------------------------------------------------------------- */
+html body {
+  /* Concentric geometry: card 24, inner surfaces 16, controls 12. */
+  --pui-c-radius-card: var(--pui-radius-panel); /* 24 */
+  --pui-c-radius-inner: var(--pui-radius-card); /* 16 */
+  --pui-c-radius-control: var(--pui-radius-lg); /* 12 */
+
+  --pui-c-fill: var(--dsw-specific-input-major); /* surface-3 */
+  --pui-c-fill-raised: var(--dsw-alias-bg-layer-2); /* surface-2 */
+  --pui-c-stroke: var(--dsw-alias-border-l2);
+  --pui-c-stroke-hover: var(--pui-border-hover);
+  --pui-c-stroke-active: var(--pui-border-active);
+  --pui-c-chip-fill: var(--dsw-alias-interactive-bg-hover);
+  --pui-c-chip-fill-hover: var(--dsw-alias-interactive-bg-active);
+  --pui-c-scrim: var(--dsw-alias-bg-mask-drop);
+  --pui-c-ring: color-mix(in srgb, var(--dsw-focus-ring-color) 40%, transparent);
+  --pui-c-ring-soft: color-mix(in srgb, var(--dsw-focus-ring-color) 12%, transparent);
+  --pui-c-hairline: color-mix(in srgb, var(--pui-text-primary) 7%, transparent);
+  --pui-c-highlight: color-mix(in srgb, var(--pui-text-primary) 6%, transparent);
+  --pui-c-elevation: var(--dsw-elevation-soft, var(--dsw-shadow-lv2));
+  --pui-c-tint: color-mix(in srgb, var(--pui-accent-sky) 12%, transparent);
+
+  /* Error text: rose-soft on dark (legible), rose-500 on the light twin. */
+  --pui-c-danger-text: var(--dsw-alias-state-error-primary);
+
+  /* Single owner of the mobile tab-bar / keyboard clearance: the mobile sheet
+   * sets this once; the composer merely consumes it (never adds its own
+   * safe-area inset, so the maths cannot double-count). */
+  --pui-composer-bottom-clearance: 0px;
+}
+
+/* ---------------------------------------------------------------------
+ * 2. Seat & stack — sticky bottom seat, capped draft scrollport
+ * ------------------------------------------------------------------- */
+html body .wSkVaW_composerSeat {
+  /* Draft max height: 14ish lines on tall screens, never more than a third of
+   * the viewport, with internal scrolling handled by `.uV2eYG_scroll`. */
+  --dsh-composer-text-max-height: clamp(150px, 32dvh, 336px);
+}
+
+html body .wSkVaW_composerStack {
+  --dsh-composer-stack-gap: 6px;
+}
+
+/* ---------------------------------------------------------------------
+ * 3. Composer card — the capsule
+ * ------------------------------------------------------------------- */
+html body .uV2eYG_root {
+  padding-bottom: max(4px, var(--pui-composer-bottom-clearance));
+}
+
+html body .uV2eYG_card {
+  padding-top: 8px;
+  gap: 10px;
+  border-radius: var(--pui-c-radius-card);
+  background: var(--pui-c-fill);
+  --dsw-specific-input-major: var(--pui-c-fill);
+  --dsw-elevation-stroke-color: var(--pui-c-stroke);
+  /* Inset 1px hairline + soft elevation + a 1px top-light edge: iOS-like
+   * structure without a second border box or layout shift. */
+  box-shadow:
+    inset 0 0 0 1px var(--pui-c-stroke),
+    inset 0 1px 0 0 var(--pui-c-highlight),
+    var(--pui-c-elevation);
+  transition:
+    box-shadow var(--pui-duration-hover) var(--pui-ease-out),
+    background-color var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+@media (hover: hover) {
+  html body .uV2eYG_card:hover {
+    box-shadow:
+      inset 0 0 0 1px var(--pui-c-stroke-hover),
+      inset 0 1px 0 0 var(--pui-c-highlight),
+      var(--pui-c-elevation);
+  }
+}
+
+/* Focus lives on the capsule, not the bare contenteditable: one ring for the
+ * whole input surface. The composer autofocuses on a desktop session, so the
+ * at-rest state only gets a soft sky edge; the strong ring is reserved for the
+ * keyboard, where focus must be unmistakable. */
+html body .uV2eYG_card:focus-within {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--pui-accent-sky) 20%, var(--pui-c-stroke-hover)),
+    inset 0 1px 0 0 var(--pui-c-highlight),
+    0 0 0 3px var(--pui-c-ring-soft),
+    var(--pui-c-elevation);
+}
+
+html body .uV2eYG_card:focus-within:has(:focus-visible) {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--pui-accent-sky) 58%, var(--pui-c-stroke-hover)),
+    inset 0 1px 0 0 var(--pui-c-highlight),
+    0 0 0 4px color-mix(in srgb, var(--dsw-focus-ring-color) 20%, transparent),
+    var(--pui-c-elevation);
+}
+
+/* No-workspace picker: dashed inset marks the whole capsule as a target. */
+html body .uV2eYG_cardWorkspaceTrigger::after {
+  border-radius: var(--pui-c-radius-card);
+  border-color: var(--pui-c-stroke-active);
+  transition:
+    border-color var(--pui-duration-hover) var(--pui-ease-out),
+    background-color var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body .uV2eYG_cardWorkspaceTrigger:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: 2px;
+}
+
+/* Removed / offline / parent-offline: the capsule recedes but keeps its
+ * structure; the disabled editor text stays readable. */
+html body .uV2eYG_card:has(.uV2eYG_inputDisabled) {
+  background: color-mix(in srgb, var(--pui-c-fill) 74%, var(--dsw-alias-bg-base));
+}
+
+@media (hover: hover) {
+  html body .uV2eYG_cardWorkspaceTrigger:hover::after {
+    border-color: var(--dsw-alias-state-business-primary);
+    background: color-mix(in srgb, var(--pui-accent-sky) 4%, transparent);
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * 4. Draft editor — auto-grow, capped internal scroll, legible placeholder
+ * ------------------------------------------------------------------- */
+html body .uV2eYG_scroll {
+  margin-right: 6px;
+}
+
+html body .uV2eYG_input {
+  min-height: 36px;
+  padding: 6px 12px 0 16px;
+  /* 14–15px / 1.6 type: inherits the user font-size preference, only the
+   * leading is normalised. */
+  line-height: 1.6;
+  color: var(--dsw-alias-label-primary);
+  caret-color: var(--dsw-alias-state-business-primary);
+  border-radius: var(--pui-c-radius-inner);
+}
+
+html body .uV2eYG_hero .uV2eYG_input {
+  /* Two 14px/1.6 lines + top pad: no fixed dead band below a one-line draft. */
+  min-height: 52px;
+}
+
+html body .uV2eYG_placeholder {
+  inset: 6px 12px auto 16px;
+  /* Secondary, not caption: the placeholder must stay legible (≈5.5:1 on the
+   * surface-3 card) — muted by comparison with the primary draft text. */
+  color: var(--dsw-alias-label-secondary);
+  line-height: 1.6;
+}
+
+html body .uV2eYG_hero .uV2eYG_placeholder {
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+html body .uV2eYG_inputDisabled {
+  color: var(--dsw-alias-label-dimmed);
+}
+
+html body .uV2eYG_input[data-composer-chip-selected] {
+  caret-color: transparent;
+}
+
+/* Machine pending dot (adjudicating / submitting): sky status, never colour
+ * alone — the send button's disabled/label state carries the meaning. */
+html body .uV2eYG_pending {
+  width: 7px;
+  height: 7px;
+  background: var(--pui-accent-sky-soft);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pui-accent-sky) 16%, transparent);
+}
+
+/* ---------------------------------------------------------------------
+ * 5. Bottom control row — attach, chips, send/stop
+ * ------------------------------------------------------------------- */
+html body .uV2eYG_row {
+  padding: 2px 10px 8px;
+  gap: 8px;
+}
+
+html body .uV2eYG_tools,
+html body .uV2eYG_modes,
+html body .uV2eYG_trailing,
+html body .uV2eYG_standardControls {
+  gap: 8px;
+}
+
+html body .uV2eYG_trailing {
+  align-items: center;
+}
+
+/* Attach (+): a quiet 30px square that reads as a control at rest. */
+html body .uV2eYG_add {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--pui-c-radius-control);
+  background: var(--pui-c-chip-fill);
+  box-shadow: inset 0 0 0 0.5px var(--pui-border-divider);
+  color: var(--dsw-alias-label-secondary);
+  transition:
+    background-color var(--pui-duration-press) var(--pui-ease-out),
+    color var(--pui-duration-press) var(--pui-ease-out),
+    box-shadow var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body .uV2eYG_add:active:not(:disabled) {
+  background: var(--pui-c-chip-fill-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+html body .uV2eYG_add:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: 2px;
+}
+
+html body .uV2eYG_add:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+@media (hover: hover) {
+  html body .uV2eYG_add:hover:not(:disabled) {
+    background: var(--pui-c-chip-fill-hover);
+    color: var(--dsw-alias-label-primary);
+    box-shadow: inset 0 0 0 0.5px var(--pui-c-stroke-hover);
+  }
+}
+
+/* Workdir / permission chip + model chip: hairline chips, 28px tall. */
+html body .iWlSmW_trigger,
+html body ._7KE1Ra_trigger,
+html body .uV2eYG_select {
+  position: relative;
+  height: 28px;
+  padding: 0 8px;
+  gap: 6px;
+  border-radius: var(--pui-c-radius-control);
+  background: transparent;
+  box-shadow: inset 0 0 0 0.5px var(--pui-border-default);
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12.5px;
+  transition:
+    background-color var(--pui-duration-hover) var(--pui-ease-out),
+    color var(--pui-duration-hover) var(--pui-ease-out),
+    box-shadow var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body .iWlSmW_trigger:active:not(:disabled),
+html body ._7KE1Ra_trigger:active:not(:disabled) {
+  background: var(--pui-c-chip-fill-hover);
+}
+
+html body .iWlSmW_trigger:focus-visible,
+html body ._7KE1Ra_trigger:focus-visible:not([data-selection-focus]) {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: 2px;
+  box-shadow: inset 0 0 0 0.5px var(--pui-c-stroke-hover);
+}
+
+html body .iWlSmW_trigger:disabled,
+html body ._7KE1Ra_trigger:disabled {
+  color: var(--dsw-alias-label-dimmed);
+  box-shadow: inset 0 0 0 0.5px var(--pui-border-divider);
+}
+
+html body .iWlSmW_triggerIcon svg,
+html body ._7KE1Ra_triggerIcon svg {
+  width: 14px;
+  height: 14px;
+}
+
+html body .iWlSmW_chevron,
+html body ._7KE1Ra_chevron {
+  color: var(--dsw-alias-label-caption);
+}
+
+/* The model name is machine text: mono + tabular keeps versions aligned and
+ * makes the vendor/effort split read as data rather than prose. */
+html body ._7KE1Ra_triggerLabel {
+  font-family: var(--pui-font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+html body ._7KE1Ra_triggerEffort {
+  font-family: var(--pui-font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  color: var(--dsw-alias-label-caption);
+}
+
+@media (hover: hover) {
+  html body .uV2eYG_row .iWlSmW_trigger:hover:not(:disabled),
+  html body .uV2eYG_row ._7KE1Ra_trigger:hover:not(:disabled) {
+    background: var(--pui-c-chip-fill);
+    box-shadow: inset 0 0 0 0.5px var(--pui-c-stroke-hover);
+    color: var(--dsw-alias-label-primary);
+  }
+
+  html body .uV2eYG_row ._7KE1Ra_trigger:hover:not(:disabled) ._7KE1Ra_triggerEffort {
+    color: var(--dsw-alias-label-tertiary);
+  }
+}
+
+/* Send: the light primary chip with a dark glyph (design-system primary).
+ * Stop (same node when the session is running) is neutral with a rose mark. */
+html body .uV2eYG_primary {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--pui-c-radius-control);
+  transform: none;
+  background: var(--dsw-alias-button-primary-fill);
+  color: var(--dsw-alias-label-primary-foreground);
+  box-shadow:
+    inset 0 1px 0 0 var(--pui-c-highlight),
+    0 1px 2px color-mix(in srgb, var(--pui-canvas) 65%, transparent);
+  transition:
+    background-color var(--pui-duration-press) var(--pui-ease-out),
+    color var(--pui-duration-press) var(--pui-ease-out),
+    box-shadow var(--pui-duration-hover) var(--pui-ease-out),
+    transform var(--pui-duration-press) var(--pui-ease-out);
+}
+
+html body .uV2eYG_primary:active:not(:disabled) {
+  transform: scale(0.96);
+  background: color-mix(in srgb, var(--dsw-alias-button-primary-fill) 84%, var(--pui-canvas));
+}
+
+html body .uV2eYG_primary:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: 2px;
+}
+
+/* Empty draft / uploads pending / unavailable: a quiet seat, not a disabled
+ * primary that looks like a filled button. */
+html body .uV2eYG_primary:disabled {
+  opacity: 1;
+  background: var(--pui-c-chip-fill);
+  color: var(--dsw-alias-label-caption);
+  box-shadow: inset 0 0 0 0.5px var(--pui-border-divider);
+  transform: none;
+}
+
+/* Stop state: the only primary that renders a `<rect>` glyph. Neutral chip,
+ * rose square — a status colour, not decoration. */
+html body .uV2eYG_primary:has(rect) {
+  background: var(--pui-surface-4);
+  color: var(--pui-accent-rose-soft);
+  box-shadow:
+    inset 0 0 0 0.5px var(--pui-border-hover),
+    0 1px 2px color-mix(in srgb, var(--pui-canvas) 55%, transparent);
+}
+
+html body .uV2eYG_primary:has(rect):disabled {
+  opacity: 1;
+  background: var(--pui-c-chip-fill);
+  color: var(--dsw-alias-label-dimmed);
+}
+
+/* A submitting spinner (newer DSH builds) turns instead of the arrow. */
+html body .uV2eYG_primary:has(svg circle) :is(svg) {
+  animation: pui-composer-spin 800ms linear infinite;
+}
+
+@keyframes pui-composer-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (hover: hover) {
+  html body .uV2eYG_primary:hover:not(:disabled) {
+    background: var(--dsw-alias-button-primary-hover);
+    box-shadow:
+      inset 0 1px 0 0 var(--pui-c-highlight),
+      0 2px 6px color-mix(in srgb, var(--pui-canvas) 70%, transparent);
+  }
+
+  html body .uV2eYG_primary:has(rect):hover:not(:disabled) {
+    background: var(--pui-surface-5);
+    color: var(--pui-accent-rose-soft);
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * 6. Notices & retry (queued / offline / failure strips)
+ * ------------------------------------------------------------------- */
+html body .uV2eYG_notice {
+  width: calc(100% - 2 * var(--dsh-composer-side-clearance, 16px));
+  max-width: var(--dsh-composer-card-max-width);
+  margin-bottom: 8px;
+  padding: 6px 12px;
+  border-radius: var(--pui-radius-md);
+  background: var(--pui-c-fill-raised);
+  box-shadow: inset 0 0 0 0.5px var(--pui-border-divider);
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12.5px;
+  line-height: 18px;
+}
+
+html body .uV2eYG_retry {
+  min-height: 24px;
+  margin-left: 8px;
+  padding: 1px 9px;
+  border: 0.5px solid var(--pui-c-stroke-hover);
+  border-radius: var(--pui-radius-sm);
+  color: var(--dsw-alias-label-primary);
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: background-color var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body .uV2eYG_retry:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  html body .uV2eYG_retry:hover {
+    background: var(--pui-c-chip-fill);
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * 7. Attachments — file cards, image boxes, rails, upload/error states
+ * ------------------------------------------------------------------- */
+html body ._54WpYG_rail {
+  padding: 4px 12px 0;
+  margin-bottom: -4px;
+}
+
+html body .JVDQca_root {
+  min-width: 0;
+}
+
+html body .JVDQca_rail {
+  gap: 8px;
+  padding: 2px 0;
+}
+
+html body .JVDQca_item {
+  height: 64px;
+}
+
+/* File card: raised inner surface, 16px radius (24 outer − 8 padding). */
+html body .gSkjMW_card {
+  width: 248px;
+  height: 64px;
+  padding: 0 12px;
+  gap: 10px;
+  border: 0.5px solid var(--pui-border-default);
+  border-radius: var(--pui-c-radius-inner);
+  background: var(--pui-c-fill-raised);
+  transition:
+    border-color var(--pui-duration-hover) var(--pui-ease-out),
+    background-color var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body .gSkjMW_icon {
+  width: 28px;
+  height: 28px;
+}
+
+html body .gSkjMW_name {
+  color: var(--dsw-alias-label-primary);
+  font-family: var(--pui-font-mono);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: -0.01em;
+}
+
+/* "MD 50B": type + human size are machine readings — mono, tabular, quiet. */
+html body .gSkjMW_meta {
+  color: var(--dsw-alias-label-secondary);
+  font-family: var(--pui-font-mono);
+  font-size: 10.5px;
+  line-height: 15px;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+html body .gSkjMW_retry {
+  border-radius: var(--pui-radius-xs);
+}
+
+html body .gSkjMW_retry:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: 2px;
+}
+
+/* Remove: small filled affordance, 44px pointer target, always present on
+ * touch (the stock rule already forces opacity 1 there). */
+html body .gSkjMW_remove,
+html body ._54WpYG_remove,
+html body .JVDQca_remove {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--dsw-alias-button-primary-fill);
+  color: var(--dsw-alias-label-primary-foreground);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--pui-canvas) 60%, transparent);
+  opacity: 0;
+}
+
+html body .gSkjMW_remove::after,
+html body ._54WpYG_remove::after,
+html body .JVDQca_remove::after {
+  content: '';
+  position: absolute;
+  inset: -12px;
+}
+
+html body .gSkjMW_remove:focus-visible,
+html body ._54WpYG_remove:focus-visible,
+html body .JVDQca_remove:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: 2px;
+}
+
+html body .gSkjMW_removeFailed {
+  background: var(--dsw-alias-state-error-primary);
+  color: var(--pui-text-primary);
+  opacity: 1;
+}
+
+html body .gSkjMW_failed {
+  border-color: color-mix(in srgb, var(--pui-accent-rose) 65%, transparent);
+}
+
+html body .gSkjMW_metaFailed {
+  color: var(--pui-c-danger-text);
+}
+
+html body .gSkjMW_spinner {
+  width: 18px;
+  height: 18px;
+  border-width: 1.5px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+/* Upload progress: a real 2px reading, never a faked percentage. */
+html body .gSkjMW_progressTrack {
+  left: 12px;
+  right: 12px;
+  bottom: 6px;
+  height: 3px;
+  border-radius: var(--pui-radius-pill);
+  background: color-mix(in srgb, var(--pui-text-primary) 12%, transparent);
+}
+
+html body .gSkjMW_progressBar {
+  border-radius: inherit;
+  background: var(--pui-accent-sky);
+}
+
+/* Image thumbnails: stable 64px boxes with the raised hairline material. */
+html body ._54WpYG_thumbnail,
+html body .JVDQca_thumbnail {
+  width: 64px;
+  height: 64px;
+  border: 0.5px solid var(--pui-border-default);
+  border-radius: var(--pui-c-radius-inner);
+  background: var(--pui-c-fill-raised);
+}
+
+html body ._54WpYG_remove {
+  top: 5px;
+  right: 5px;
+}
+
+html body .JVDQca_remove {
+  top: 5px;
+  right: 5px;
+}
+
+/* Rail paging arrows: raised pill, hairline, panel elevation. */
+html body .JVDQca_arrow {
+  width: 28px;
+  height: 28px;
+  background: var(--pui-c-fill-raised);
+  color: var(--dsw-alias-label-secondary);
+  box-shadow:
+    inset 0 0 0 0.5px var(--pui-c-stroke),
+    var(--dsw-elevation-panel, var(--dsw-shadow-lv2));
+}
+
+html body .JVDQca_arrow:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  html body .gSkjMW_card:hover {
+    border-color: var(--pui-c-stroke-hover);
+    background: color-mix(in srgb, var(--pui-c-fill-raised) 82%, var(--pui-c-fill));
+  }
+
+  html body .gSkjMW_card:hover .gSkjMW_remove,
+  html body ._54WpYG_imageItem:hover ._54WpYG_remove,
+  html body .JVDQca_item:hover .JVDQca_remove {
+    opacity: 1;
+  }
+
+  html body .JVDQca_arrow:hover {
+    background: var(--pui-surface-4);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * 8. Drop target — full-viewport scrim + one designed landing card
+ * ------------------------------------------------------------------- */
+html body .BInVoG_mask {
+  background-color: var(--pui-c-scrim);
+  backdrop-filter: blur(6px);
+}
+
+html body .BInVoG_wrap {
+  max-width: min(560px, calc(100vw - 48px));
+  margin-top: 0;
+  padding: 40px 56px 36px;
+  border: 1px dashed color-mix(in srgb, var(--pui-accent-sky) 42%, var(--pui-border-hover));
+  border-radius: var(--pui-c-radius-card);
+  background: color-mix(in srgb, var(--dsw-alias-bg-layer-2) 82%, transparent);
+  box-shadow: var(--dsw-elevation-prominent, var(--dsw-shadow-lv3));
+  animation: pui-composer-drop-in var(--pui-duration-panel) var(--pui-ease-out);
+}
+
+html body .BInVoG_illustration {
+  width: 92px;
+  height: 68px;
+  opacity: 0.9;
+}
+
+html body .BInVoG_title {
+  margin-top: 14px;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 26px;
+  letter-spacing: -0.01em;
+  color: var(--dsw-alias-label-primary);
+}
+
+html body .BInVoG_desc {
+  margin-top: 8px;
+  font-size: 12.5px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+@keyframes pui-composer-drop-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * 9. Queue panel — messages waiting for the next turn
+ * ------------------------------------------------------------------- */
+html body ._7yHdaG_panel {
+  border-radius: var(--pui-c-radius-card) var(--pui-c-radius-card) 0 0;
+  background: var(--pui-c-fill-raised);
+}
+
+html body ._7yHdaG_panel::before {
+  background: var(--pui-c-fill-raised);
+  backdrop-filter: none;
+}
+
+html body ._7yHdaG_panel::after {
+  border: 0.5px solid var(--pui-border-default);
+  border-bottom: none;
+}
+
+html body ._7yHdaG_header {
+  height: 34px;
+  padding: 4px 12px;
+  border-radius: var(--pui-radius-md);
+  color: var(--dsw-alias-label-primary);
+}
+
+html body ._7yHdaG_header:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: -2px;
+}
+
+html body ._7yHdaG_lead {
+  color: var(--dsw-alias-label-secondary);
+}
+
+html body ._7yHdaG_count {
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+html body ._7yHdaG_chevron {
+  color: var(--dsw-alias-label-tertiary);
+}
+
+html body ._7yHdaG_row {
+  min-height: 34px;
+  border-radius: var(--pui-radius-md);
+}
+
+html body ._7yHdaG_row + ._7yHdaG_row {
+  box-shadow: inset 0 1px 0 var(--pui-border-divider);
+}
+
+html body ._7yHdaG_file {
+  height: 24px;
+  border-color: var(--pui-border-divider);
+  border-radius: var(--pui-radius-sm);
+  background: var(--dsw-alias-bg-base);
+}
+
+html body ._7yHdaG_fileName {
+  font-family: var(--pui-font-mono);
+  font-size: 10.5px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+html body ._7yHdaG_fileSize {
+  font-family: var(--pui-font-mono);
+  font-size: 9.5px;
+  color: var(--dsw-alias-label-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+html body ._7yHdaG_preview {
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+html body ._7yHdaG_status {
+  font-family: var(--pui-font-mono);
+  font-size: 10.5px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+html body ._7yHdaG_action {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--pui-radius-sm);
+  color: var(--dsw-alias-label-secondary);
+}
+
+html body ._7yHdaG_action:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: -2px;
+}
+
+@media (hover: hover) {
+  html body ._7yHdaG_header:hover:not(:disabled) {
+    background: var(--pui-c-chip-fill);
+  }
+
+  html body ._7yHdaG_action:hover:not(:disabled) {
+    background: var(--pui-c-chip-fill);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * 10. Dock row — stats pills + context meter
+ * ------------------------------------------------------------------- */
+html body .uV2eYG_dock {
+  flex-wrap: wrap;
+  gap: 6px;
+  row-gap: 4px;
+  padding-top: 6px;
+}
+
+html body .bOPqQW_anchor {
+  font-size: 11.5px;
+  line-height: 18px;
+}
+
+html body .bOPqQW_pill {
+  position: relative;
+  height: 22px;
+  gap: 6px;
+  padding: 2px 9px;
+  border-radius: var(--pui-radius-pill);
+  box-shadow: inset 0 0 0 0.5px var(--pui-border-divider);
+  color: var(--dsw-alias-label-tertiary);
+  font-family: var(--pui-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  transition:
+    color var(--pui-duration-hover) var(--pui-ease-out),
+    background-color var(--pui-duration-hover) var(--pui-ease-out),
+    box-shadow var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body .bOPqQW_pill svg {
+  width: 13px;
+  height: 13px;
+  color: var(--dsw-alias-label-caption);
+}
+
+html body .bOPqQW_sep {
+  margin: 0 5px;
+  color: var(--dsw-alias-label-caption);
+}
+
+html body .bOPqQW_pill:focus-visible,
+html body .JObwrW_trigger:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: 2px;
+}
+
+/* Context meter: the ring is a data reading, the figure is tabular. */
+html body .JObwrW_trigger {
+  position: relative;
+  height: 22px;
+  gap: 6px;
+  padding: 2px 9px;
+  border-radius: var(--pui-radius-pill);
+  box-shadow: inset 0 0 0 0.5px var(--pui-border-divider);
+  color: var(--dsw-alias-label-tertiary);
+  font-family: var(--pui-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  transition:
+    color var(--pui-duration-hover) var(--pui-ease-out),
+    background-color var(--pui-duration-hover) var(--pui-ease-out),
+    box-shadow var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body .JObwrW_trigger svg {
+  width: 13px;
+  height: 13px;
+}
+
+html body .JObwrW_track {
+  stroke: var(--dsw-alias-border-l3);
+}
+
+html body .JObwrW_fill {
+  stroke: var(--pui-text-secondary);
+}
+
+html body .JObwrW_trigger[aria-expanded='true'] {
+  background: var(--pui-c-chip-fill);
+  color: var(--dsw-alias-label-secondary);
+  box-shadow: inset 0 0 0 0.5px var(--pui-c-stroke-hover);
+}
+
+@media (hover: hover) {
+  html body .bOPqQW_pill:hover,
+  html body .JObwrW_trigger:hover {
+    background: var(--pui-c-chip-fill);
+    color: var(--dsw-alias-label-secondary);
+    box-shadow: inset 0 0 0 0.5px var(--pui-c-stroke-hover);
+  }
+
+  html body button.bOPqQW_pill:hover svg {
+    color: var(--dsw-alias-label-secondary);
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * 10b. Phone dock — icon-only stats
+ *      Phones keep the dock on one line: each stat pill and the context
+ *      meter collapse to its icon/ring. Text and separators are hidden
+ *      (DSH still reveals the full figures in the portaled dialog on tap).
+ *      Hit areas reach 44px through ::after on coarse pointers; the visual
+ *      stays ~32px so adjacent icons keep >= 8px spacing.
+ * ------------------------------------------------------------------- */
+@media (max-width: 767px), (max-width: 1023px) and (max-height: 480px) and (pointer: coarse) {
+  html body .uV2eYG_dock {
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 8px;
+    row-gap: 0;
+  }
+
+  html body .bOPqQW_anchor {
+    flex: 0 0 auto;
+  }
+
+  /* The context meter's reading text ("14%") is the stock span inside the
+   * trigger; on phones only the ring stays, the figures live in the tap dialog. */
+  html body .JObwrW_trigger > span {
+    display: none;
+  }
+
+  html body .bOPqQW_pill,
+  html body .JObwrW_trigger {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    padding: 0;
+    gap: 0;
+    justify-content: center;
+  }
+
+  html body .bOPqQW_label,
+  html body .bOPqQW_sep,
+  html body .JObwrW_percent {
+    display: none;
+  }
+
+  html body .bOPqQW_pill svg,
+  html body .JObwrW_trigger svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  /* 44px hit box centred on the 32px visual; inset:-6px keeps neighbours
+   * 8px apart while the pointer target stays >= 44px. */
+  html body .bOPqQW_pill::after,
+  html body .JObwrW_trigger::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+  }
+
+  /* Keyboard/AT users still see the ring on the icon-only control. */
+  html body .bOPqQW_pill:focus-visible,
+  html body .JObwrW_trigger:focus-visible {
+    outline: 2px solid var(--dsw-focus-ring-color);
+    outline-offset: 2px;
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * 11. Inline trigger chips — slash commands and @-references
+ * ------------------------------------------------------------------- */
+html body .uV2eYG_input .q44v1G_reference {
+  padding: 0 5px;
+  border-radius: 6px;
+  color: var(--pui-accent-sky-soft);
+  background: var(--pui-c-tint);
+  box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--pui-accent-sky) 20%, transparent);
+}
+
+html body .uV2eYG_input .yAWgPa_chip {
+  gap: 4px;
+  color: var(--pui-accent-sky-soft);
+}
+
+html body .uV2eYG_input .yAWgPa_invalid {
+  color: var(--pui-c-danger-text);
+  opacity: 0.75;
+  text-decoration: line-through;
+}
+
+html body .uV2eYG_input[data-composer-command][data-selected] > .q44v1G_reference {
+  background: color-mix(in srgb, var(--pui-accent-sky) 20%, transparent);
+}
+
+@media (hover: hover) {
+  html body .uV2eYG_input .q44v1G_reference:hover {
+    background: color-mix(in srgb, var(--pui-accent-sky) 18%, transparent);
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * 12. Coarse pointers — 44px targets, larger type, extra breathing room
+ * ------------------------------------------------------------------- */
+@media (pointer: coarse) {
+  html body .uV2eYG_input {
+    min-height: 40px;
+  }
+
+  html body .uV2eYG_hero .uV2eYG_input {
+    min-height: 56px;
+  }
+
+  html body .uV2eYG_row {
+    padding: 4px 10px 10px;
+    gap: 10px;
+  }
+
+  html body .uV2eYG_tools,
+  html body .uV2eYG_modes,
+  html body .uV2eYG_trailing,
+  html body .uV2eYG_standardControls {
+    gap: 8px;
+  }
+
+  /* Primary icon actions: 40px visual box with a real 48px hit area, so the
+   * 44px probe square (QA: getBoundingClientRect + elementFromPoint corners)
+   * lands on the button itself, not on the card behind it. */
+  html body .uV2eYG_add {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--pui-radius-input);
+  }
+
+  html body .uV2eYG_add::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+  }
+
+  /* Phone: the attach/command menu opens above the composer. Keep it inside
+   * the visible area (never above the top safe area) and scrollable, so it
+   * cannot be clipped at the top edge while the keyboard is closed. */
+  html body [class*='_3e4SsG_menu'] {
+    max-height: min(
+      360px,
+      calc(100dvh - var(--pui-safe-top) - var(--pui-composer-seat-height, 160px) - var(--pui-space-md))
+    );
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  html body .uV2eYG_primary {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--pui-radius-input);
+  }
+
+  html body .uV2eYG_primary::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+  }
+
+  /* Chips keep their 40px visual height; the tap box reaches 44px vertically
+   * without widening horizontally (adjacent chips keep their 8px gap). */
+  html body .iWlSmW_trigger,
+  html body ._7KE1Ra_trigger,
+  html body .uV2eYG_select {
+    height: 36px;
+    padding: 0 10px;
+    font-size: 13px;
+  }
+
+  html body .iWlSmW_trigger::after,
+  html body ._7KE1Ra_trigger::after {
+    content: '';
+    position: absolute;
+    inset: -6px 0;
+  }
+
+  html body .uV2eYG_input,
+  html body .uV2eYG_placeholder {
+    font-size: max(16px, var(--dsh-content-font-size, 14px));
+  }
+
+  html body .bOPqQW_pill,
+  html body .JObwrW_trigger {
+    height: 32px;
+    padding: 2px 10px;
+    font-size: 12px;
+  }
+
+  /* Wrapped dock rows sit 4px apart: expand by 2px each so sibling hit
+   * boxes meet at the gap instead of overlapping the row above. */
+  html body .bOPqQW_pill::after,
+  html body .JObwrW_trigger::after {
+    content: '';
+    position: absolute;
+    inset: -2px 0;
+  }
+
+  html body .uV2eYG_dock {
+    gap: 8px;
+  }
+
+  html body .gSkjMW_card {
+    width: 260px;
+    height: 68px;
+  }
+
+  html body .gSkjMW_name {
+    font-size: 13px;
+  }
+
+  html body .gSkjMW_meta {
+    font-size: 11px;
+  }
+
+  html body .gSkjMW_remove,
+  html body ._54WpYG_remove,
+  html body .JVDQca_remove {
+    width: 24px;
+    height: 24px;
+  }
+
+  html body ._7yHdaG_action {
+    position: relative;
+    width: 40px;
+    height: 40px;
+  }
+
+  html body ._7yHdaG_action::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * 13. Narrow viewports — card-level rhythm only; the phone shell (tab bar,
+ *     safe areas, drawer) is owned by 30-mobile.css, which also publishes
+ *     --pui-composer-bottom-clearance (consumed once above).
+ * ------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  html body .uV2eYG_card {
+    gap: 8px;
+    padding-top: 6px;
+  }
+
+  html body .uV2eYG_row {
+    padding: 2px 8px 8px;
+  }
+
+  html body .uV2eYG_hero .uV2eYG_input {
+    min-height: 54px;
+  }
+
+  html body .uV2eYG_placeholder {
+    inset: 6px 10px auto 14px;
+  }
+
+  html body .uV2eYG_input {
+    padding: 6px 10px 0 14px;
+  }
+
+  html body ._54WpYG_rail {
+    padding: 4px 10px 0;
+  }
+
+  html body .uV2eYG_dock {
+    justify-content: center;
+  }
+
+  html body .bOPqQW_pill,
+  html body .JObwrW_trigger {
+    font-size: 10.5px;
+  }
+
+  html body .BInVoG_wrap {
+    padding: 32px 28px;
+  }
+
+  html body .BInVoG_title {
+    font-size: 16px;
+    line-height: 24px;
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * 14. Short viewports — keep the composer compact so it never eats the
+ *     transcript (the draft keeps its own internal scroll).
+ * ------------------------------------------------------------------- */
+@media (max-height: 640px) {
+  html body .wSkVaW_composerSeat {
+    --dsh-composer-text-max-height: 180px;
+  }
+
+  html body .uV2eYG_card {
+    gap: 8px;
+    padding-top: 6px;
+  }
+}
+
+/* Theme-scoped danger ink (component token, resolves from the accent ladder). */
+html body[data-ds-dark-theme] {
+  --pui-c-danger-text: var(--pui-accent-rose-soft);
+}
+
+html body:not([data-ds-dark-theme]) {
+  --pui-c-danger-text: var(--dsw-alias-state-error-primary);
+}
+
+/* Light twin: the top-edge highlight is a light bevel, not a dark smear. */
+html body:not([data-ds-dark-theme]) {
+  --pui-c-highlight: color-mix(in srgb, var(--pui-text-on-light) 72%, transparent);
+}

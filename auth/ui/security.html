@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#171717" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>安全设置 · Palace</title>
+    <link rel="icon" href="/__palace/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/__palace/app.css" />
+  </head>
+  <body data-page="security">
+    <main class="shell wide">
+      <header class="brand"><span class="mark">P</span><span>Palace</span></header>
+
+      <section class="card">
+        <div class="section-head">
+          <div>
+            <h1>安全设置</h1>
+            <p>管理通行密钥、持久会话与恢复码。</p>
+          </div>
+          <a class="link" href="/">返回 Palace</a>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <div>
+              <h2>通行密钥</h2>
+              <p>推荐至少保留两个可独立使用的凭据。</p>
+            </div>
+            <button class="btn small" id="add-passkey" type="button">添加</button>
+          </div>
+          <div class="rows" id="passkey-list"></div>
+          <form id="add-passkey-form" class="stack mt hidden" autocomplete="off">
+            <label class="field">
+              <span>新通行密钥名称</span>
+              <input id="new-passkey-name" maxlength="60" placeholder="例如：笔记本" autocomplete="off" />
+            </label>
+            <div class="row">
+              <button class="btn small primary" type="submit">创建</button>
+              <button class="btn small ghost" id="cancel-add-passkey" type="button">取消</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <div>
+              <h2>登录会话</h2>
+              <p id="session-policy"></p>
+            </div>
+            <button class="btn small danger" id="revoke-others" type="button">撤销其他会话</button>
+          </div>
+          <div class="rows" id="session-list"></div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <div>
+              <h2>恢复码</h2>
+              <p id="recovery-count">剩余恢复码：—</p>
+            </div>
+            <button class="btn small" id="regenerate-recovery" type="button">重新生成</button>
+          </div>
+          <div class="codes hidden" id="new-recovery-codes"></div>
+          <div class="notice hidden" id="recovery-notice"></div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <div>
+              <h2>当前设备</h2>
+              <p id="reauth-state"></p>
+            </div>
+            <button class="btn small" id="reauth" type="button">验证通行密钥</button>
+          </div>
+          <button class="btn danger mt" id="logout" type="button">退出登录</button>
+        </div>
+
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+      </section>
+
+      <footer class="foot">敏感操作需要 5 分钟内完成一次通行密钥验证。</footer>
+    </main>
+    <script type="module" src="/__palace/app.js"></script>
+  </body>
+</html>

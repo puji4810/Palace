@@ -1,0 +1,1394 @@
+/* =====================================================================
+ * palace-ui / 20 · Shell chrome
+ * =====================================================================
+ * Owns the DSH shell's persistent chrome:
+ *   1. Sidebar column — brand row, new-session action, global nav,
+ *      workspace section header, workspace/session tree, footer launcher.
+ *   2. Conversation header — session title + mode badge, 对话/轨迹 tabs,
+ *      view overflow, right-side utility actions, blank/home header.
+ *   3. Empty-state hero — Palace mark, headline, preview badge, hero chips.
+ *
+ * Visual rules (see DESIGN_CONTRACT.md):
+ *   · 5-level surface ladder: canvas (0) → sidebar (1) → controls (2) →
+ *     selected/active (3) → pressed (4). The header stays on canvas so the
+ *     conversation column reads as one continuous sheet.
+ *   · Depth comes from lightness + hairline strokes, never glow/shadow.
+ *   · 4px spacing grid; radii from the --pui-radius ladder.
+ *   · Times/counts use mono tabular numerals.
+ *   · Hover lives behind @media (hover: hover); selected / focus / disabled
+ *     are always rendered. Coarse pointers get ≥44px targets.
+ *
+ * Pinned DSH 0.2.1-rc.5 CSS-module hashes (audited in docs/palace-ui-shell.md):
+ *   Frame      pI_x6G_{frame,sidebarCol,centerCol,handle}
+ *   Sidebar    hHd-Xa_{root,collapsed,logoRow,brand,brandIdentity,brandMark,
+ *              brandName,toggle,iconButton,newSession,newSessionContent,
+ *              newSessionLabel,newSessionShortcut,panelList,panelRow,
+ *              panelGlyph,panelTitle,moreAnchor,regionArea,footArea,
+ *              footerActions,settingsArea,railMark,panelIcon,railIn,quietBars}
+ *   Workspace  bhn1Oq_{root,rail,sectionHeader,sectionLabel,searchSlot,search,
+ *              searchButton,searchInput,searchExpanded,headerActions,
+ *              iconButton,listArea,treeBody,list,fade}
+ *              YDXeBa_{projectRow,sessionRow,selected,menuOpen,title,time,
+ *              meta,slot,folder,folderActive,chevron,arrow,rowActions,
+ *              iconButton,dot,pinIndicator,archived}
+ *   Header     wSkVaW_{root,header,headerBlank,headerLeading,titleRow,
+ *              titleCluster,crumbs,crumbSeg,crumb,crumbCurrent,headerActions,
+ *              headerUtilities,headerCorner,tabs,viewTabs,tab,tabActive,
+ *              tabLabel,viewsMoreAnchor,viewsMore,viewsMoreActive,
+ *              heroWorkspaceRow,heroOptions,composerHero}
+ *   Badge      SVAs4q_label
+ *   Open-in    OMoRSG_{split,main,chevron,appIcon}
+ *   More       nL4_yW_moreButton
+ *   Hero       pXSMma_{root,stack,headline,titleGroup,previewBadge,fishHitbox,
+ *              fish,body,workspace,workspaceLabel,folder,chevron}
+ *              cubgiG_{menuAnchor,seat,seatLabel,seatIcon,chevron}
+ *   Footer     yHnPSG_{root,anchor,trigger,label}, VOzbGW_triggerRow
+ *   Brand slot .pui-brand-name, .pui-mark, .pui-hero-mark (shell/10-brand.js)
+ * ===================================================================== */
+
+/* =====================================================================
+ * 1. Shell frame + sidebar column
+ * ===================================================================== */
+html body .pI_x6G_frame {
+  background: var(--dsw-alias-bg-base);
+}
+
+html body .pI_x6G_sidebarCol {
+  background: var(--dsw-specific-sidebar-fill);
+  border-right: 1px solid var(--dsw-alias-border-l1);
+}
+
+html body .hHd-Xa_root {
+  --dsh-sidebar-inline-padding: 12px;
+  padding: 8px var(--dsh-sidebar-inline-padding) 10px;
+  font-size: 13.5px;
+  color: var(--dsw-alias-label-secondary);
+  background: var(--dsw-specific-sidebar-fill);
+}
+
+/* =====================================================================
+ * 2. Brand row
+ * ===================================================================== */
+html body .hHd-Xa_logoRow {
+  height: 52px;
+  margin: 0 0 6px;
+  padding: 0;
+  gap: 6px;
+  justify-content: space-between;
+  overflow: visible;
+}
+
+html body .hHd-Xa_brand {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 34px;
+  padding: 0 6px;
+  border-radius: var(--pui-radius-sm);
+  color: var(--dsw-alias-label-primary);
+  transition: background-color var(--pui-duration-hover) var(--pui-ease-out);
+}
+@media (hover: hover) {
+  html body .hHd-Xa_brand:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+  }
+}
+html body .hHd-Xa_brand:active {
+  background: var(--dsw-alias-interactive-bg-active);
+}
+html body .hHd-Xa_brand:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: 2px;
+}
+
+html body .hHd-Xa_brandIdentity {
+  gap: 9px;
+  height: 24px;
+}
+html body .hHd-Xa_brandMark {
+  color: var(--dsw-alias-label-primary);
+}
+html body .hHd-Xa_brandMark .pui-mark {
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+html body .hHd-Xa_brandName {
+  height: 24px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  gap: 7px;
+}
+
+/* Lead-owned brand markup (shell/10-brand.js) — position only. */
+html body .pui-brand-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: var(--dsw-alias-label-primary);
+  font-family: var(--pui-font-ui);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 20px;
+}
+html body .pui-brand-name__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html body .pui-brand-name__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 16px;
+  padding: 0 4px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: var(--pui-radius-xs);
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-caption);
+  font-family: var(--pui-font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+html body .hHd-Xa_toggle {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--pui-radius-sm);
+  color: var(--dsw-alias-label-tertiary);
+  transition:
+    color var(--pui-duration-hover) var(--pui-ease-out),
+    background-color var(--pui-duration-hover) var(--pui-ease-out);
+}
+@media (hover: hover) {
+  html body .hHd-Xa_toggle:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+html body .hHd-Xa_toggle:active {
+  background: var(--dsw-alias-interactive-bg-active);
+}
+html body .hHd-Xa_toggle:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: 2px;
+}
+
+/* =====================================================================
+ * 3. New-session action — the sidebar's primary action
+ * ===================================================================== */
+html body .hHd-Xa_newSession {
+  height: 38px;
+  margin: 0 0 10px;
+  padding: 0 10px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: var(--pui-radius-md);
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-primary);
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 20px;
+  justify-content: flex-start;
+  transition:
+    background-color var(--pui-duration-hover) var(--pui-ease-out),
+    border-color var(--pui-duration-hover) var(--pui-ease-out);
+}
+html body .hHd-Xa_newSessionContent {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 9px;
+  padding-left: 2px;
+}
+html body .hHd-Xa_newSessionContent > svg {
+  flex: none;
+  color: var(--dsw-alias-label-secondary);
+  transition: color var(--pui-duration-hover) var(--pui-ease-out);
+}
+@media (hover: hover) {
+  html body .hHd-Xa_newSession:hover {
+    background: var(--dsw-alias-bg-layer-3);
+    border-color: var(--dsw-alias-border-l3);
+  }
+  html body .hHd-Xa_newSession:hover .hHd-Xa_newSessionContent > svg {
+    color: var(--dsw-alias-label-primary);
+  }
+}
+html body .hHd-Xa_newSession:active {
+  background: var(--dsw-alias-interactive-bg-hover-solid);
+  border-color: var(--dsw-alias-border-l4);
+}
+html body .hHd-Xa_newSession:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: 2px;
+}
+html body .hHd-Xa_newSessionShortcut {
+  color: var(--dsw-alias-label-caption);
+  font-family: var(--pui-font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+html body .hHd-Xa_newSession[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* =====================================================================
+ * 4. Global nav (插件 / 自动化任务 / 更多)
+ * ===================================================================== */
+html body .hHd-Xa_panelList {
+  gap: 2px;
+  margin-bottom: 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--dsw-alias-border-l1);
+}
+html body .hHd-Xa_panelRow {
+  min-height: 36px;
+  margin: 0;
+  padding: 0 10px;
+  gap: 10px;
+  border: 1px solid transparent;
+  border-radius: var(--pui-radius-sm);
+  color: var(--dsw-alias-label-secondary);
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 20px;
+  transition:
+    background-color var(--pui-duration-hover) var(--pui-ease-out),
+    color var(--pui-duration-hover) var(--pui-ease-out);
+}
+@media (hover: hover) {
+  html body .hHd-Xa_panelRow:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+html body .hHd-Xa_panelRow:active {
+  background: var(--dsw-alias-interactive-bg-active);
+}
+html body .hHd-Xa_panelRow.hHd-Xa_panelActive,
+html body .hHd-Xa_panelRow[aria-expanded='true'] {
+  background: var(--dsw-alias-bg-layer-3);
+  border-color: var(--dsw-alias-border-l1);
+  color: var(--dsw-alias-label-primary);
+}
+html body .hHd-Xa_panelRow:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: -2px;
+}
+html body .hHd-Xa_panelGlyph {
+  color: var(--dsw-alias-label-tertiary);
+  transition: color var(--pui-duration-hover) var(--pui-ease-out);
+}
+html body .hHd-Xa_panelRow:hover .hHd-Xa_panelGlyph,
+html body .hHd-Xa_panelRow.hHd-Xa_panelActive .hHd-Xa_panelGlyph {
+  color: var(--dsw-alias-label-primary);
+}
+html body .hHd-Xa_panelTitle {
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+/* =====================================================================
+ * 5. Workspace section header (工作区 + search / sort / add)
+ * ===================================================================== */
+html body .bhn1Oq_sectionHeader {
+  height: 30px;
+  margin: 2px 0 4px;
+  padding: 0 0 0 2px;
+  gap: 2px;
+  color: var(--dsw-alias-label-caption);
+}
+html body .bhn1Oq_sectionLabel {
+  padding-left: 8px;
+  color: var(--dsw-alias-label-caption);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 16px;
+}
+html body .bhn1Oq_iconButton,
+html body .bhn1Oq_searchButton,
+html body .bhn1Oq_clearButton {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  color: var(--dsw-alias-label-tertiary);
+  transition:
+    background-color var(--pui-duration-hover) var(--pui-ease-out),
+    color var(--pui-duration-hover) var(--pui-ease-out);
+}
+@media (hover: hover) {
+  html body .bhn1Oq_iconButton:hover,
+  html body .bhn1Oq_searchButton:hover,
+  html body .bhn1Oq_clearButton:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+html body .bhn1Oq_iconButton:active,
+html body .bhn1Oq_searchButton:active,
+html body .bhn1Oq_clearButton:active {
+  background: var(--dsw-alias-interactive-bg-active);
+}
+html body .bhn1Oq_iconButton:focus-visible,
+html body .bhn1Oq_searchButton:focus-visible,
+html body .bhn1Oq_clearButton:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: 2px;
+}
+html body .bhn1Oq_searchExpanded {
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: var(--pui-radius-sm);
+  background: var(--dsw-alias-bg-layer-2);
+  height: 30px;
+}
+html body .bhn1Oq_searchInput {
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+}
+html body .bhn1Oq_searchInput::placeholder {
+  color: var(--dsw-alias-label-dimmed);
+}
+
+/* =====================================================================
+ * 6. Workspace + session tree
+ * ===================================================================== */
+html body .bhn1Oq_listArea {
+  margin-left: -4px;
+}
+html body .bhn1Oq_list {
+  padding-bottom: 12px;
+}
+html body .bhn1Oq_fade {
+  background: linear-gradient(to bottom, transparent, var(--dsw-specific-sidebar-fill));
+  height: 20px;
+}
+
+html body .YDXeBa_projectRow,
+html body .YDXeBa_sessionRow {
+  position: relative;
+  border-radius: var(--pui-radius-sm);
+  padding: 0 8px;
+  color: var(--dsw-alias-label-secondary);
+  transition:
+    background-color var(--pui-duration-hover) var(--pui-ease-out),
+    color var(--pui-duration-hover) var(--pui-ease-out);
+}
+html body .YDXeBa_projectRow {
+  height: 32px;
+  gap: 6px;
+}
+html body .YDXeBa_sessionRow {
+  height: 34px;
+  gap: 0;
+}
+html body .YDXeBa_projectRow .YDXeBa_title,
+html body .YDXeBa_sessionRow .YDXeBa_title {
+  color: inherit;
+  font-size: 13.5px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+html body .YDXeBa_projectRow .YDXeBa_title {
+  font-weight: 500;
+}
+html body .YDXeBa_sessionRow .YDXeBa_title {
+  margin: 0 8px 0 6px;
+}
+html body .YDXeBa_slot {
+  color: var(--dsw-alias-label-tertiary);
+}
+html body .YDXeBa_folderActive {
+  color: var(--dsw-alias-state-business-primary);
+}
+html body .YDXeBa_chevron {
+  color: var(--dsw-alias-label-caption);
+}
+html body .YDXeBa_arrow {
+  color: var(--dsw-alias-label-caption);
+}
+
+/* Row hover: quiet fill, title lifts one text step. */
+@media (hover: hover) {
+  html body .YDXeBa_projectRow:hover,
+  html body .YDXeBa_sessionRow:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+    color: var(--dsw-alias-label-primary);
+  }
+  html body .YDXeBa_sessionRow:hover .YDXeBa_time,
+  html body .YDXeBa_sessionRow.YDXeBa_menuOpen .YDXeBa_time {
+    color: var(--dsw-alias-label-caption);
+  }
+  html body .YDXeBa_projectRow:hover .YDXeBa_rowActions,
+  html body .YDXeBa_sessionRow:hover .YDXeBa_rowActions,
+  html body .YDXeBa_projectRow:focus-within .YDXeBa_rowActions,
+  html body .YDXeBa_sessionRow:focus-within .YDXeBa_rowActions,
+  html body .YDXeBa_projectRow:focus-visible .YDXeBa_rowActions,
+  html body .YDXeBa_sessionRow:focus-visible .YDXeBa_rowActions,
+  html body .YDXeBa_projectRow.YDXeBa_menuOpen .YDXeBa_rowActions,
+  html body .YDXeBa_sessionRow.YDXeBa_menuOpen .YDXeBa_rowActions {
+    display: inline-flex;
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Selected session: level-3 fill + hairline, the strongest quiet state. */
+html body .YDXeBa_sessionRow.YDXeBa_selected {
+  background: var(--dsw-alias-bg-layer-3);
+  box-shadow: inset 0 0 0 1px var(--dsw-alias-border-l1);
+  color: var(--dsw-alias-label-primary);
+}
+html body .YDXeBa_sessionRow.YDXeBa_selected .YDXeBa_title {
+  font-weight: 500;
+}
+@media (hover: hover) {
+  html body .YDXeBa_sessionRow.YDXeBa_selected:hover {
+    background: var(--dsw-alias-interactive-bg-hover-solid);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+
+html body .YDXeBa_sessionRow:active,
+html body .YDXeBa_projectRow:active {
+  background: var(--dsw-alias-interactive-bg-active);
+}
+html body .YDXeBa_projectRow:focus-visible,
+html body .YDXeBa_sessionRow:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: -2px;
+}
+
+/* Relative time: mono tabular numerals, quiet caption. */
+html body .YDXeBa_time {
+  flex: none;
+  color: var(--dsw-alias-label-caption);
+  font-family: var(--pui-font-mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  line-height: 16px;
+  letter-spacing: 0;
+}
+html body .YDXeBa_meta {
+  color: var(--dsw-alias-label-caption);
+  font-family: var(--pui-font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+html body .YDXeBa_pinIndicator {
+  color: var(--dsw-alias-label-caption);
+}
+
+/* Running session mark: emerald status dot, no glow, no animation loop. */
+html body .YDXeBa_dot {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--pui-radius-pill);
+  background: var(--dsw-alias-state-success-primary);
+  color: var(--dsw-alias-state-success-primary);
+}
+html body .YDXeBa_dot > svg {
+  width: 8px;
+  height: 8px;
+}
+html body .YDXeBa_archived .YDXeBa_title {
+  color: var(--dsw-alias-label-dimmed);
+}
+
+html body .YDXeBa_rowActions {
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--pui-duration-hover) var(--pui-ease-out);
+}
+html body .YDXeBa_iconButton {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  color: var(--dsw-alias-label-tertiary);
+}
+@media (hover: hover) {
+  html body .YDXeBa_iconButton:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+html body .YDXeBa_iconButton:active {
+  background: var(--dsw-alias-interactive-bg-active);
+}
+html body .YDXeBa_iconButton:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: 2px;
+}
+
+/* Coarse primary pointer: row actions are never hover-gated. Each action gets
+ * a full 44x44 target with 8px spacing; the relative time / chevron yield their
+ * columns so the row does not overflow. */
+@media (pointer: coarse) {
+  html body .YDXeBa_projectRow .YDXeBa_rowActions,
+  html body .YDXeBa_sessionRow .YDXeBa_rowActions {
+    display: inline-flex;
+    gap: 8px;
+    opacity: 1;
+    pointer-events: auto;
+  }
+  html body .YDXeBa_projectRow .YDXeBa_chevron {
+    display: none;
+  }
+  html body .YDXeBa_sessionRow .YDXeBa_time,
+  html body .YDXeBa_sessionRow .YDXeBa_pinIndicator {
+    display: none;
+  }
+  /* Session rows expose a single 44x44 "…" menu on touch; archive / pin stay
+   * inside that menu, so the title keeps its width in the 280px sidebar. The
+   * slot wrapper carries an inline `display: contents`, so hide its buttons
+   * instead of the wrapper (no !important needed). */
+  html body .YDXeBa_sessionRow .YDXeBa_rowActions > [data-slot='sidebar.workspaces.session.row.action'] button {
+    display: none;
+  }
+  html body .YDXeBa_rowActions .YDXeBa_iconButton {
+    width: var(--pui-touch-target);
+    height: var(--pui-touch-target);
+    border-radius: var(--pui-radius-sm);
+  }
+}
+
+/* =====================================================================
+ * 7. Sidebar footer (更多 / account launcher)
+ * ===================================================================== */
+html body .hHd-Xa_footArea {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--dsw-alias-border-l1);
+}
+html body .VOzbGW_triggerRow {
+  width: 100%;
+}
+html body .yHnPSG_trigger {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  gap: 12px;
+  border-radius: var(--pui-radius-sm);
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 13.5px;
+  font-weight: 500;
+  justify-content: flex-start;
+  transition:
+    background-color var(--pui-duration-hover) var(--pui-ease-out),
+    color var(--pui-duration-hover) var(--pui-ease-out);
+}
+html body .yHnPSG_trigger svg {
+  flex: none;
+  color: var(--dsw-alias-label-tertiary);
+}
+html body .yHnPSG_label {
+  color: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 20px;
+}
+@media (hover: hover) {
+  html body .yHnPSG_trigger:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+    color: var(--dsw-alias-label-primary);
+  }
+  html body .yHnPSG_trigger:hover svg {
+    color: var(--dsw-alias-label-primary);
+  }
+}
+html body .yHnPSG_trigger:active {
+  background: var(--dsw-alias-interactive-bg-active);
+}
+html body .yHnPSG_trigger:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: -2px;
+}
+
+/* =====================================================================
+ * 8. Collapsed rail (56px)
+ * ===================================================================== */
+html body .hHd-Xa_root.hHd-Xa_collapsed {
+  padding: 10px 10px 8px;
+}
+html body .hHd-Xa_collapsed .hHd-Xa_logoRow {
+  justify-content: center;
+  height: 44px;
+  margin: 0 0 6px;
+  padding: 0;
+  gap: 0;
+}
+html body .hHd-Xa_collapsed .hHd-Xa_brand {
+  display: none;
+}
+html body .hHd-Xa_collapsed .hHd-Xa_toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--pui-radius-md);
+  color: var(--dsw-alias-label-primary);
+}
+html body .hHd-Xa_collapsed .hHd-Xa_railMark {
+  color: var(--dsw-alias-label-primary);
+}
+html body .hHd-Xa_collapsed .hHd-Xa_railMark .pui-mark {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+html body .hHd-Xa_collapsed .hHd-Xa_toggle .hHd-Xa_panelIcon {
+  display: none;
+  color: var(--dsw-alias-label-primary);
+}
+@media (hover: hover) {
+  html body .hHd-Xa_collapsed .hHd-Xa_toggle:hover {
+    background: var(--dsw-alias-bg-layer-2);
+  }
+  html body .hHd-Xa_collapsed .hHd-Xa_toggle:hover .hHd-Xa_panelIcon {
+    display: inline;
+  }
+  html body .hHd-Xa_collapsed .hHd-Xa_toggle:hover .hHd-Xa_railMark {
+    display: none;
+  }
+}
+
+html body .hHd-Xa_collapsed .hHd-Xa_newSession {
+  align-self: center;
+  width: 36px;
+  height: 36px;
+  margin: 0 0 10px;
+  padding: 0;
+  border-color: transparent;
+  border-radius: var(--pui-radius-md);
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  justify-content: center;
+}
+html body .hHd-Xa_collapsed .hHd-Xa_newSessionContent {
+  width: auto;
+  padding-left: 0;
+  justify-content: center;
+}
+@media (hover: hover) {
+  html body .hHd-Xa_collapsed .hHd-Xa_newSession:hover {
+    background: var(--dsw-alias-bg-layer-2);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+html body .hHd-Xa_collapsed .hHd-Xa_newSession:active {
+  background: var(--dsw-alias-bg-layer-3);
+}
+
+html body .hHd-Xa_collapsed .hHd-Xa_panelList {
+  position: relative;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+html body .hHd-Xa_collapsed .hHd-Xa_panelList::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  width: 20px;
+  height: 1px;
+  background: var(--dsw-alias-border-l1);
+  transform: translateX(-50%);
+}
+html body .hHd-Xa_collapsed .hHd-Xa_panelRow {
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  justify-content: center;
+  border-radius: var(--pui-radius-md);
+  color: var(--dsw-alias-label-secondary);
+}
+html body .hHd-Xa_collapsed .hHd-Xa_panelRow .hHd-Xa_panelTitle {
+  display: none;
+}
+html body .hHd-Xa_collapsed .hHd-Xa_panelGlyph svg {
+  width: 18px;
+  height: 18px;
+}
+html body .hHd-Xa_collapsed .hHd-Xa_panelRow.hHd-Xa_panelActive,
+html body .hHd-Xa_collapsed .hHd-Xa_panelRow[aria-expanded='true'] {
+  background: var(--dsw-alias-bg-layer-3);
+  border-color: transparent;
+  color: var(--dsw-alias-label-primary);
+}
+@media (hover: hover) {
+  html body .hHd-Xa_collapsed .hHd-Xa_panelRow:hover {
+    background: var(--dsw-alias-bg-layer-2);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+
+html body .hHd-Xa_collapsed .hHd-Xa_regionArea {
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0;
+}
+html body .hHd-Xa_collapsed .bhn1Oq_root.bhn1Oq_rail {
+  align-items: center;
+  padding-right: 0;
+}
+html body .hHd-Xa_collapsed .bhn1Oq_sectionHeader {
+  height: 36px;
+  margin: 0 0 6px;
+  padding: 0;
+  justify-content: center;
+  gap: 0;
+}
+html body .hHd-Xa_collapsed .bhn1Oq_sectionLabel {
+  display: none;
+}
+html body .hHd-Xa_collapsed .bhn1Oq_headerActions {
+  max-width: none;
+  gap: 0;
+}
+html body .hHd-Xa_collapsed .bhn1Oq_iconButton,
+html body .hHd-Xa_collapsed .bhn1Oq_searchButton {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--pui-radius-md);
+  color: var(--dsw-alias-label-secondary);
+}
+html body .hHd-Xa_collapsed .bhn1Oq_search {
+  width: 36px;
+  height: 36px;
+  margin: 0 0 8px;
+  border-radius: var(--pui-radius-md);
+}
+html body .hHd-Xa_collapsed .bhn1Oq_searchButton svg {
+  width: 18px;
+  height: 18px;
+}
+html body .hHd-Xa_collapsed .bhn1Oq_listArea {
+  align-items: center;
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0;
+}
+html body .hHd-Xa_collapsed .bhn1Oq_list {
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+html body .hHd-Xa_collapsed .YDXeBa_projectRow,
+html body .hHd-Xa_collapsed .YDXeBa_sessionRow {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  justify-content: center;
+  border-radius: var(--pui-radius-md);
+}
+html body .hHd-Xa_collapsed .YDXeBa_title,
+html body .hHd-Xa_collapsed .YDXeBa_time,
+html body .hHd-Xa_collapsed .YDXeBa_rowActions,
+html body .hHd-Xa_collapsed .YDXeBa_chevron {
+  display: none;
+}
+html body .hHd-Xa_collapsed .YDXeBa_folderActive {
+  color: var(--dsw-alias-state-business-primary);
+}
+html body .hHd-Xa_collapsed .hHd-Xa_footArea {
+  align-items: center;
+  margin-top: 0;
+  padding-top: 8px;
+}
+html body .hHd-Xa_collapsed .yHnPSG_trigger {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  justify-content: center;
+  border-radius: var(--pui-radius-md);
+}
+html body .hHd-Xa_collapsed .yHnPSG_label {
+  display: none;
+}
+
+/* =====================================================================
+ * 9. Conversation header
+ * ===================================================================== */
+html body .wSkVaW_header {
+  min-height: 0;
+  padding: 8px 16px 0 20px;
+  border-bottom: 1px solid var(--dsw-alias-border-l1);
+}
+html body .wSkVaW_headerBlank {
+  min-height: 48px;
+  padding: 10px 16px;
+  border-bottom: none;
+}
+html body .wSkVaW_titleRow {
+  min-height: 32px;
+}
+html body .wSkVaW_titleCluster {
+  gap: 10px;
+}
+html body .wSkVaW_headerLeading {
+  gap: 8px;
+}
+
+/* Session title / breadcrumb */
+html body .wSkVaW_crumbs {
+  gap: 2px;
+}
+html body .wSkVaW_crumb {
+  max-width: 260px;
+  padding: 4px 8px;
+  border-radius: var(--pui-radius-sm);
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 13.5px;
+  line-height: 20px;
+}
+html body button.wSkVaW_crumb {
+  transition:
+    background-color var(--pui-duration-hover) var(--pui-ease-out),
+    color var(--pui-duration-hover) var(--pui-ease-out);
+}
+@media (hover: hover) {
+  html body button.wSkVaW_crumb:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+html body .wSkVaW_crumbCurrent {
+  color: var(--dsw-alias-label-primary);
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+html body .wSkVaW_crumbSep {
+  color: var(--dsw-alias-label-dimmed);
+  font-size: 13px;
+}
+html body .wSkVaW_headerActions {
+  gap: 8px;
+}
+
+/* Mode badge (标准模式) — informational pill, not a button. */
+html body .SVAs4q_label {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: var(--pui-radius-pill);
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+html body .SVAs4q_icon {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+/* Right-side utilities */
+html body .wSkVaW_headerUtilities {
+  gap: 6px;
+  margin-left: 12px;
+}
+html body .wSkVaW_headerCorner {
+  margin-left: 6px;
+  margin-right: 0;
+}
+html body .wSkVaW_headerUtilities button,
+html body .wSkVaW_headerCorner button,
+html body .wSkVaW_headerActions button {
+  border-radius: var(--pui-radius-sm);
+  color: var(--dsw-alias-label-tertiary);
+  transition:
+    background-color var(--pui-duration-hover) var(--pui-ease-out),
+    color var(--pui-duration-hover) var(--pui-ease-out);
+}
+@media (hover: hover) {
+  html body .wSkVaW_headerUtilities button:hover,
+  html body .wSkVaW_headerCorner button:hover,
+  html body .wSkVaW_headerActions button:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+html body .wSkVaW_headerUtilities button:active,
+html body .wSkVaW_headerCorner button:active {
+  background: var(--dsw-alias-interactive-bg-active);
+}
+html body .wSkVaW_headerUtilities button:focus-visible,
+html body .wSkVaW_headerCorner button:focus-visible,
+html body .wSkVaW_headerActions button:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: 2px;
+}
+html body .wSkVaW_headerUtilities button[aria-expanded='true'],
+html body .wSkVaW_headerCorner button[aria-expanded='true'] {
+  background: var(--dsw-alias-bg-layer-3);
+  color: var(--dsw-alias-label-primary);
+}
+html body .wSkVaW_headerUtilities button[disabled],
+html body .wSkVaW_headerCorner button[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* VS Code split control: one hairline capsule, two quiet segments. */
+html body .OMoRSG_split {
+  height: 26px;
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: 7px;
+  background: transparent;
+  overflow: hidden;
+  transition: border-color var(--pui-duration-hover) var(--pui-ease-out);
+}
+html body .OMoRSG_main,
+html body .OMoRSG_chevron {
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 0;
+  color: var(--dsw-alias-label-tertiary);
+  background: transparent;
+}
+html body .OMoRSG_chevron {
+  width: 20px;
+  padding: 0;
+  border-left: 1px solid var(--dsw-alias-border-l1);
+}
+@media (hover: hover) {
+  html body .OMoRSG_split:hover {
+    border-color: var(--dsw-alias-border-l3);
+  }
+  html body .OMoRSG_main:hover,
+  html body .OMoRSG_chevron:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+html body .OMoRSG_main:active,
+html body .OMoRSG_chevron:active {
+  background: var(--dsw-alias-interactive-bg-active);
+}
+html body .OMoRSG_main:focus-visible,
+html body .OMoRSG_chevron:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: -2px;
+}
+html body .OMoRSG_appIcon {
+  width: 13px;
+  height: 13px;
+  opacity: 0.9;
+}
+
+html body .wSkVaW_headerCorner button {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--pui-radius-sm);
+  color: var(--dsw-alias-label-tertiary);
+}
+html body .wSkVaW_headerCorner button svg {
+  color: currentColor;
+}
+
+/* =====================================================================
+ * 10. View tabs (对话 / 轨迹) — segmented control, not underline tabs
+ * ===================================================================== */
+html body .wSkVaW_tabs {
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding-left: 0;
+  min-height: 30px;
+  min-width: 0;
+}
+html body .wSkVaW_viewTabs {
+  flex-wrap: nowrap;
+  gap: 2px;
+  padding: 2px;
+  min-height: 0;
+  max-width: 100%;
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: var(--pui-radius-sm);
+  background: var(--dsw-alias-bg-layer-1);
+}
+html body .wSkVaW_tab {
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 6px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 26px;
+  transition:
+    background-color var(--pui-duration-hover) var(--pui-ease-out),
+    color var(--pui-duration-hover) var(--pui-ease-out);
+}
+html body .wSkVaW_tab:after {
+  display: none;
+}
+@media (hover: hover) {
+  html body .wSkVaW_tab:hover {
+    background: var(--dsw-alias-bg-layer-2);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+html body .wSkVaW_tab:active {
+  background: var(--dsw-alias-interactive-bg-active);
+}
+html body .wSkVaW_tabActive {
+  background: var(--dsw-alias-bg-layer-3);
+  box-shadow: inset 0 0 0 1px var(--dsw-alias-border-l2);
+  color: var(--dsw-alias-label-primary);
+}
+html body .wSkVaW_tabActive:hover {
+  background: var(--dsw-alias-bg-layer-3);
+  color: var(--dsw-alias-label-primary);
+}
+html body .wSkVaW_tab:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: 2px;
+}
+html body .wSkVaW_tabLabel {
+  max-width: 120px;
+  font-size: 12.5px;
+  line-height: 26px;
+}
+html body .wSkVaW_viewsMoreAnchor {
+  margin-left: 2px;
+}
+html body .wSkVaW_viewsMore {
+  width: 26px;
+  height: 26px;
+  margin-top: 0;
+  border-radius: 6px;
+  color: var(--dsw-alias-label-tertiary);
+  transition:
+    background-color var(--pui-duration-hover) var(--pui-ease-out),
+    color var(--pui-duration-hover) var(--pui-ease-out);
+}
+@media (hover: hover) {
+  html body .wSkVaW_viewsMore:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+html body .wSkVaW_viewsMore[aria-expanded='true'],
+html body .wSkVaW_viewsMoreActive {
+  background: var(--dsw-alias-bg-layer-3);
+  color: var(--dsw-alias-label-primary);
+}
+html body .wSkVaW_viewsMore:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: 2px;
+}
+/* Extra view actions injected into the tab row stay quiet. Scoped to buttons
+ * that are not the tabs themselves so the active tab keeps its own colour. */
+html body .wSkVaW_tabs button:not(.wSkVaW_tab):not(.wSkVaW_viewsMore) {
+  border-radius: 6px;
+  color: var(--dsw-alias-label-tertiary);
+}
+@media (hover: hover) {
+  html body .wSkVaW_tabs button:not(.wSkVaW_tab):not(.wSkVaW_viewsMore):hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+
+/* =====================================================================
+ * 11. Empty-state hero
+ * ===================================================================== */
+html body .pXSMma_root {
+  padding: 0 24px;
+}
+html body .pXSMma_headline {
+  gap: 12px 10px;
+  color: var(--dsw-alias-label-primary);
+  font-size: clamp(22px, 4.6vw, 28px);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+}
+html body .pXSMma_fishHitbox {
+  color: var(--dsw-alias-label-primary);
+  transition: color var(--pui-duration-hover) var(--pui-ease-out);
+}
+html body .pui-hero-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+html body .pui-hero-mark .pui-mark {
+  display: block;
+  width: 34px;
+  height: 34px;
+}
+@media (max-width: 480px) {
+  html body .pui-hero-mark .pui-mark {
+    width: 28px;
+    height: 28px;
+  }
+  html body .pXSMma_fishHitbox {
+    width: 28px;
+    height: 28px;
+  }
+}
+html body .pXSMma_titleGroup {
+  gap: 6px 10px;
+}
+html body .pXSMma_previewBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: center;
+  height: 20px;
+  margin-top: 0;
+  padding: 0 8px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: var(--pui-radius-pill);
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-secondary);
+  font-family: var(--pui-font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+html body .pXSMma_previewBadge::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: var(--pui-radius-pill);
+  background: var(--dsw-alias-state-business-primary);
+}
+html body .pXSMma_body {
+  gap: 12px;
+}
+
+/* Hero chips (workspace + 标准模式) — one quiet capsule language. */
+html body .wSkVaW_heroWorkspaceRow {
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 0;
+  min-height: 30px;
+}
+html body .pXSMma_workspace,
+html body .cubgiG_seat {
+  height: 30px;
+  min-height: 30px;
+  padding: 0 10px;
+  gap: 6px;
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: var(--pui-radius-sm);
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 20px;
+  transition:
+    background-color var(--pui-duration-hover) var(--pui-ease-out),
+    border-color var(--pui-duration-hover) var(--pui-ease-out),
+    color var(--pui-duration-hover) var(--pui-ease-out);
+}
+@media (hover: hover) {
+  html body .pXSMma_workspace:not(:disabled):hover,
+  html body .cubgiG_seat:hover {
+    background: var(--dsw-alias-bg-layer-2);
+    border-color: var(--dsw-alias-border-l2);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+html body .pXSMma_workspace[aria-expanded='true'],
+html body .cubgiG_seat[aria-expanded='true'] {
+  background: var(--dsw-alias-bg-layer-3);
+  border-color: var(--dsw-alias-border-l3);
+  color: var(--dsw-alias-label-primary);
+}
+html body .pXSMma_workspace:focus-visible,
+html body .cubgiG_seat:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color);
+  outline-offset: 2px;
+}
+html body .pXSMma_workspace:disabled,
+html body .cubgiG_seat:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+html body .pXSMma_folder,
+html body .cubgiG_seatIcon {
+  flex: none;
+  color: var(--dsw-alias-label-tertiary);
+}
+html body .pXSMma_workspaceLabel,
+html body .cubgiG_seatLabel {
+  color: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 20px;
+}
+html body .pXSMma_chevron,
+html body .cubgiG_chevron {
+  flex: none;
+  color: var(--dsw-alias-label-dimmed);
+}
+html body .wSkVaW_heroOptions {
+  gap: 6px;
+}
+/* The options slot is rendered as an empty wrapper (not :empty) when no plugin
+ * contributes hero options; its `margin-left:auto` would push the chips to the
+ * left edge, so hide it until it actually contains an actionable control. */
+html body .wSkVaW_heroOptions:not(:has(button, a, [role='button'], [role='menuitem'])) {
+  display: none;
+}
+
+/* =====================================================================
+ * 12. Coarse pointers — 44px touch targets, no hover-only actions
+ * ===================================================================== */
+@media (pointer: coarse) {
+  /* Sidebar: rows grow to a full touch target. */
+  html body .hHd-Xa_panelRow {
+    min-height: var(--pui-touch-target);
+  }
+  html body .YDXeBa_projectRow,
+  html body .YDXeBa_sessionRow {
+    height: var(--pui-touch-target);
+  }
+  html body .hHd-Xa_newSession {
+    height: var(--pui-touch-target);
+  }
+  html body .hHd-Xa_toggle,
+  html body .bhn1Oq_iconButton,
+  html body .bhn1Oq_searchButton,
+  html body .yHnPSG_trigger {
+    min-width: var(--pui-touch-target);
+    min-height: var(--pui-touch-target);
+  }
+  html body .bhn1Oq_sectionHeader {
+    height: 40px;
+  }
+
+  /* Collapsed rail: 44px content column inside the 56px strip. */
+  html body .hHd-Xa_root.hHd-Xa_collapsed {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+  html body .hHd-Xa_collapsed .hHd-Xa_toggle,
+  html body .hHd-Xa_collapsed .hHd-Xa_newSession,
+  html body .hHd-Xa_collapsed .hHd-Xa_panelRow,
+  html body .hHd-Xa_collapsed .bhn1Oq_iconButton,
+  html body .hHd-Xa_collapsed .bhn1Oq_searchButton,
+  html body .hHd-Xa_collapsed .yHnPSG_trigger {
+    width: var(--pui-touch-target);
+    height: var(--pui-touch-target);
+    min-width: var(--pui-touch-target);
+    min-height: var(--pui-touch-target);
+  }
+  html body .hHd-Xa_collapsed .bhn1Oq_search {
+    width: var(--pui-touch-target);
+    height: var(--pui-touch-target);
+  }
+
+  /* Header: visual size stays compact, hit area expands to 44px. */
+  html body .wSkVaW_headerUtilities button,
+  html body .wSkVaW_headerCorner button,
+  html body .wSkVaW_viewsMore {
+    position: relative;
+  }
+  html body .wSkVaW_headerUtilities button::after,
+  html body .wSkVaW_headerCorner button::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+  }
+  html body .wSkVaW_viewsMore::after {
+    content: '';
+    position: absolute;
+    inset: -9px;
+  }
+  html body .OMoRSG_split {
+    height: 36px;
+  }
+  html body .OMoRSG_main,
+  html body .OMoRSG_chevron {
+    position: relative;
+  }
+  html body .OMoRSG_main::after,
+  html body .OMoRSG_chevron::after {
+    content: '';
+    position: absolute;
+    inset: -5px 0;
+  }
+  html body .OMoRSG_main,
+  html body .OMoRSG_chevron {
+    height: 34px;
+  }
+  html body .OMoRSG_main {
+    min-width: 32px;
+  }
+  html body .OMoRSG_chevron {
+    width: 24px;
+  }
+  html body .wSkVaW_headerCorner button {
+    width: 32px;
+    height: 32px;
+  }
+  html body .wSkVaW_tab {
+    min-height: var(--pui-touch-target);
+    line-height: 40px;
+    padding: 0 14px;
+  }
+  html body .pXSMma_workspace,
+  html body .cubgiG_seat {
+    height: var(--pui-touch-target);
+    min-height: var(--pui-touch-target);
+  }
+}
+
+/* =====================================================================
+ * 13. Narrow desktop / tablet — keep the chrome from crowding content
+ * ===================================================================== */
+@media (max-width: 1024px) {
+  html body .wSkVaW_header {
+    padding: 8px 12px 0 16px;
+  }
+  html body .wSkVaW_crumb {
+    max-width: 180px;
+  }
+  html body .wSkVaW_headerUtilities {
+    margin-left: 8px;
+  }
+}
+@media (max-width: 860px) {
+  html body .wSkVaW_header {
+    padding: 8px 10px 0 14px;
+  }
+  html body .wSkVaW_crumb {
+    max-width: 140px;
+  }
+  html body .pXSMma_root {
+    padding: 0 16px;
+  }
+}

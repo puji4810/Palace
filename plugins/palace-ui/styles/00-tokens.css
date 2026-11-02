@@ -1,0 +1,485 @@
+/* =====================================================================
+ * palace-ui / 00 · Design tokens (Primitive → Semantic → Component)
+ * =====================================================================
+ * Soft Minimal Dark. Depth comes from structure, type and lightness — not from
+ * pure black, glows or large blurred shadows.
+ *
+ * The DSH client reads the `--dsw-*` semantic aliases from ui-theme; we remap
+ * them here instead of restyling every component. The sheet is scoped to
+ * `html body[...]` so it wins over ui-theme's `body[...]` declarations by both
+ * specificity and order (this stylesheet is appended after the theme sheets).
+ *
+ * Layers in this file:
+ *   1. `--pui-*` primitives — the only place literal values live.
+ *   2. Static neutral ramp — desaturates the stock bluish greys so components
+ *      that read `--dsw-static-*` directly follow the same neutral scale.
+ *   3. Dark semantic aliases — surfaces, text, borders, states, buttons.
+ *   4. Light semantic aliases — a coherent soft-minimal light twin.
+ *   5. Geometry, typography, motion, elevation, scrollbar and focus tokens.
+ * ===================================================================== */
+
+:root {
+  /* ---- 1. primitives: dark surfaces (5 lightness levels) -------------- */
+  --pui-canvas: #141414;
+  --pui-surface-1: #1c1c1c;
+  --pui-surface-2: #232323;
+  --pui-surface-3: #2b2b2b;
+  --pui-surface-4: #353535;
+  --pui-surface-5: #404040;
+
+  /* ---- primitives: dark text ----------------------------------------- */
+  --pui-text-primary: #e6e6e6;
+  --pui-text-secondary: #a1a1aa;
+  --pui-text-tertiary: #9a9aa3;
+  --pui-text-caption: #9c9ca6;
+  --pui-text-muted: #6e6e77;
+  --pui-text-on-light: #141414;
+
+  /* ---- primitives: borders (1px + alpha, never solid grey lines) ------ */
+  --pui-border-divider: rgba(255, 255, 255, 0.05);
+  --pui-border-default: rgba(255, 255, 255, 0.07);
+  --pui-border-hover: rgba(255, 255, 255, 0.12);
+  --pui-border-active: rgba(255, 255, 255, 0.2);
+  --pui-border-inverted: rgba(0, 0, 0, 0.07);
+
+  /* ---- primitives: semantic accents (low saturation, status only) ----- */
+  --pui-accent-sky: #38bdf8;
+  --pui-accent-sky-soft: #7dd3fc;
+  --pui-accent-emerald: #10b981;
+  --pui-accent-emerald-soft: #34d399;
+  --pui-accent-amber: #f59e0b;
+  --pui-accent-amber-soft: #fbbf24;
+  --pui-accent-rose: #f43f5e;
+  --pui-accent-rose-soft: #fb7185;
+  --pui-accent-violet: #a78bfa;
+
+  /* ---- primitives: radius ladder (concentric nesting) ----------------- */
+  --pui-radius-xs: 4px;
+  --pui-radius-sm: 8px;
+  --pui-radius-md: 10px;
+  --pui-radius-lg: 12px;
+  --pui-radius-card: 16px;
+  --pui-radius-input: 14px;
+  --pui-radius-panel: 24px;
+  --pui-radius-pill: 9999px;
+
+  /* ---- primitives: spacing (4px grid) --------------------------------- */
+  --pui-space-xs: 4px;
+  --pui-space-sm: 8px;
+  --pui-space-md: 12px;
+  --pui-space-lg: 16px;
+  --pui-space-xl: 24px;
+  --pui-space-2xl: 32px;
+
+  /* ---- primitives: motion --------------------------------------------- */
+  --pui-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --pui-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --pui-duration-press: 110ms;
+  --pui-duration-hover: 150ms;
+  --pui-duration-panel: 220ms;
+  --pui-duration-modal: 240ms;
+
+  /* ---- primitives: touch ---------------------------------------------- */
+  --pui-touch-target: 44px;
+  --pui-touch-gap: 8px;
+
+  /* ---- typography primitives ------------------------------------------ */
+  --pui-font-ui: Inter, "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont,
+    "PingFang SC", "Noto Sans CJK SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui,
+    sans-serif;
+  --pui-font-mono: "JetBrains Mono", "Geist Mono", "SF Mono", "Fira Code", "Roboto Mono",
+    Consolas, "Liberation Mono", Menlo, "PingFang SC", "Microsoft YaHei", monospace;
+}
+
+/* =====================================================================
+ * 2. Static neutral ramp (shared by both themes, like the stock sheet).
+ *    DSH components occasionally read the static scale directly; remapping
+ *    it here keeps those spots from drifting back to the bluish palette.
+ * ===================================================================== */
+html body {
+  --dsw-static-neutral-bluish-00: #ffffff;
+  --dsw-static-neutral-bluish-50: #fafafa;
+  --dsw-static-neutral-bluish-55: #f9f9fa;
+  --dsw-static-neutral-bluish-60: #f7f7f8;
+  --dsw-static-neutral-bluish-75: #f5f5f7;
+  --dsw-static-neutral-bluish-90: #f2f2f4;
+  --dsw-static-neutral-bluish-100: #ededf0;
+  --dsw-static-neutral-bluish-150: #e6e6ea;
+  --dsw-static-neutral-bluish-200: #dcdce1;
+  --dsw-static-neutral-bluish-300: #c7c7ce;
+  --dsw-static-neutral-bluish-310: #b9b9c2;
+  --dsw-static-neutral-bluish-400: #a1a1aa;
+  --dsw-static-neutral-bluish-500: #8a8a93;
+  --dsw-static-neutral-bluish-600: #6e6e77;
+  --dsw-static-neutral-bluish-700: #4a4a52;
+  --dsw-static-neutral-bluish-750: #3a3a40;
+  --dsw-static-neutral-bluish-800: #2e2e33;
+  --dsw-static-neutral-bluish-850: #262628;
+  --dsw-static-neutral-bluish-875: #202022;
+  --dsw-static-neutral-bluish-900: #1a1a1b;
+  --dsw-static-neutral-bluish-950: #141414;
+  --dsw-static-neutral-bluish-1000: #101011;
+
+  --dsw-static-neutral-00: #ffffff;
+  --dsw-static-neutral-50: #fafafa;
+  --dsw-static-neutral-100: #f2f2f4;
+  --dsw-static-neutral-150: #ececef;
+  --dsw-static-neutral-200: #e2e2e7;
+  --dsw-static-neutral-250: #d4d4da;
+  --dsw-static-neutral-300: #c4c4cb;
+  --dsw-static-neutral-400: #a1a1aa;
+  --dsw-static-neutral-500: #8a8a93;
+  --dsw-static-neutral-550: #7c7c85;
+  --dsw-static-neutral-600: #6e6e77;
+  --dsw-static-neutral-700: #333336;
+  --dsw-static-neutral-800: #2b2b2d;
+  --dsw-static-neutral-850: #232325;
+  --dsw-static-neutral-900: #161617;
+  --dsw-static-neutral-1000: #101011;
+}
+
+/* =====================================================================
+ * 3. Dark semantics — the primary design target.
+ * ===================================================================== */
+html body[data-ds-dark-theme] {
+  /* ---- surfaces: canvas → layer 3 ------------------------------------ */
+  --dsw-alias-bg-base: var(--pui-canvas);
+  --dsw-alias-bg-layer-1: var(--pui-surface-1);
+  --dsw-alias-bg-layer-2: var(--pui-surface-2);
+  --dsw-alias-bg-layer-3: var(--pui-surface-3);
+  --dsw-alias-bg-overlay: var(--pui-surface-2);
+  --dsw-alias-bg-module-platform: var(--pui-surface-1);
+  --dsw-alias-bg-multi-select: var(--pui-surface-3);
+  --dsw-alias-bg-skeleton: rgba(255, 255, 255, 0.06);
+  --dsw-alias-bg-document-preview: var(--pui-surface-1);
+  --dsw-alias-label-document-preview: var(--pui-text-secondary);
+  --dsw-alias-bg-document-selection: color-mix(in srgb, var(--pui-accent-sky) 40%, transparent);
+
+  /* ---- masks: dim without blur --------------------------------------- */
+  --dsw-alias-bg-mask-1: rgba(0, 0, 0, 0.55);
+  --dsw-alias-bg-mask-2: rgba(0, 0, 0, 0.35);
+  --dsw-alias-bg-mask-3: rgba(0, 0, 0, 0.7);
+  --dsw-alias-bg-mask-photo: rgba(0, 0, 0, 0.9);
+  --dsw-alias-bg-mask-drop: rgba(20, 20, 20, 0.72);
+
+  /* ---- text ---------------------------------------------------------- */
+  --dsw-alias-label-primary: var(--pui-text-primary);
+  --dsw-alias-label-secondary: var(--pui-text-secondary);
+  --dsw-alias-label-tertiary: var(--pui-text-tertiary);
+  --dsw-alias-label-caption: var(--pui-text-caption);
+  --dsw-alias-label-dimmed: var(--pui-text-muted);
+  --dsw-alias-label-primary-dimmed: #cfcfd6;
+  --dsw-alias-label-primary-bluish: var(--pui-text-primary);
+  --dsw-alias-label-primary-foreground: var(--pui-text-on-light);
+  --dsw-alias-label-primary-inverted: var(--pui-surface-1);
+  --dsw-alias-label-shimmer: rgba(255, 255, 255, 0.45);
+  --dsw-alias-menu-icon: var(--pui-text-secondary);
+  --dsw-alias-link: var(--pui-accent-sky-soft);
+  --dsw-alias-label-deep-diving: var(--pui-accent-sky-soft);
+  --dsw-alias-label-deep-diving-shimmer: var(--pui-accent-sky);
+
+  /* ---- borders ------------------------------------------------------- */
+  --dsw-alias-border-l1: var(--pui-border-divider);
+  --dsw-alias-border-l2: var(--pui-border-default);
+  --dsw-alias-border-l2-darkmode-thin: rgba(255, 255, 255, 0.06);
+  --dsw-alias-border-l3: rgba(255, 255, 255, 0.09);
+  --dsw-alias-border-l4: var(--pui-border-active);
+  --dsw-alias-border-inverted: var(--pui-border-inverted);
+  --dsw-alias-border-inverted2: rgba(0, 0, 0, 0.1);
+
+  /* ---- interaction --------------------------------------------------- */
+  --dsw-alias-interactive-bg-hover: rgba(255, 255, 255, 0.055);
+  --dsw-alias-interactive-bg-active: rgba(255, 255, 255, 0.09);
+  --dsw-alias-interactive-bg-hover-solid: var(--pui-surface-4);
+  --dsw-alias-interactive-bg-hover-accent: rgba(56, 189, 248, 0.12);
+  --dsw-alias-interactive-bg-hover-danger: rgba(244, 63, 94, 0.12);
+
+  /* ---- buttons: the primary action is a light chip with dark text ----- */
+  --dsw-alias-brand-primary: var(--pui-text-primary);
+  --dsw-alias-brand-primary-invert: var(--pui-canvas);
+  --dsw-alias-brand-primary-new-colorprimary-new-color: var(--pui-accent-sky);
+  --dsw-alias-brand-text: var(--pui-text-primary);
+  --dsw-alias-button-primary-fill: var(--pui-text-primary);
+  --dsw-alias-button-primary-hover: #f5f5f5;
+  --dsw-alias-button-primary-dimmed: var(--pui-surface-4);
+  --dsw-alias-button-contrast-fill: var(--pui-text-primary);
+  --dsw-alias-button-elevated-fill: var(--pui-surface-3);
+  --dsw-alias-button-floating-fill: var(--pui-surface-3);
+  --dsw-alias-button-floating-hover: var(--pui-surface-4);
+  --dsw-alias-button-ghost-active-fill: var(--pui-surface-3);
+  --dsw-alias-button-ghost-active-hover: var(--pui-surface-4);
+  --dsw-alias-button-ghost-active-border: var(--pui-border-hover);
+  --dsw-alias-button-info-fill: var(--pui-accent-sky);
+  --dsw-alias-button-info-hover: var(--pui-accent-sky-soft);
+  --dsw-alias-button-tool-bar-fill: rgba(20, 20, 20, 0.55);
+  --dsw-alias-button-tool-bar-fill-invisible: rgba(20, 20, 20, 0.3);
+  --dsw-alias-button-tool-bar-hover: rgba(53, 53, 53, 0.8);
+
+  /* ---- state colours (status marks, not decoration) ------------------- */
+  --dsw-alias-state-business-primary: var(--pui-accent-sky);
+  --dsw-alias-state-business-tertiary: rgba(56, 189, 248, 0.14);
+  --dsw-alias-state-success-primary: var(--pui-accent-emerald);
+  --dsw-alias-state-success-secondary: var(--pui-accent-emerald-soft);
+  --dsw-alias-state-success-tertiary: rgba(16, 185, 129, 0.14);
+  --dsw-alias-state-warn-primary: var(--pui-accent-amber);
+  --dsw-alias-state-warn-secondary: var(--pui-accent-amber-soft);
+  --dsw-alias-state-warn-tertiary: rgba(245, 158, 11, 0.14);
+  --dsw-alias-state-warn-label: var(--pui-accent-amber-soft);
+  --dsw-alias-state-error-primary: var(--pui-accent-rose);
+  --dsw-alias-state-error-secondary: var(--pui-accent-rose-soft);
+  --dsw-alias-state-done-primary: var(--pui-accent-violet);
+  --dsw-alias-state-idle-primary: var(--pui-text-muted);
+  --dsw-alias-code-diff-added: rgba(16, 185, 129, 0.14);
+  --dsw-alias-code-diff-deleted: rgba(244, 63, 94, 0.14);
+  --dsw-alias-file-diff-added-bg: rgba(16, 185, 129, 0.09);
+  --dsw-alias-file-diff-added-gutter: rgba(16, 185, 129, 0.05);
+  --dsw-alias-file-diff-added-marker: #34d399;
+  --dsw-alias-file-diff-deleted-bg: rgba(244, 63, 94, 0.09);
+  --dsw-alias-file-diff-deleted-gutter: rgba(244, 63, 94, 0.05);
+  --dsw-alias-file-diff-deleted-marker: #fb7185;
+
+  /* ---- markdown / artifacts ------------------------------------------ */
+  --dsw-alias-markdown-code-block: #1a1a1a;
+  --dsw-alias-markdown-code-block-banner: var(--pui-surface-2);
+  --dsw-alias-markdown-code-segment-selected: var(--pui-surface-3);
+  --dsw-alias-markdown-code-segment-unselected: #1a1a1a;
+  --dsw-alias-markdown-inline-code: #333336;
+  --dsw-alias-markdown-placeholder: rgba(255, 255, 255, 0.16);
+  --dsw-alias-markdown-tag: var(--pui-surface-3);
+  --dsw-alias-markdown-citation: var(--pui-surface-3);
+  --dsw-alias-turn-trigger-bg: var(--pui-surface-2);
+  --dsw-alias-turn-trigger-bg-hover: var(--pui-surface-3);
+
+  /* ---- surfaces specific to one feature ------------------------------- */
+  --dsw-specific-bubble: var(--pui-surface-3);
+  --dsw-specific-bubble-highlight: var(--pui-surface-4);
+  --dsw-specific-input-major: var(--pui-surface-3);
+  --dsw-specific-login-input: var(--pui-surface-2);
+  --dsw-specific-selector: var(--pui-surface-3);
+  --dsw-specific-sidebar-fill: var(--pui-surface-1);
+  --dsw-specific-sidebar-nav-item-active: var(--pui-surface-3);
+  --dsw-specific-sidebar-nav-item-active-accent: var(--pui-accent-sky);
+  --dsw-specific-tip: var(--pui-surface-2);
+  --dsw-specific-menu: rgba(31, 31, 31, 0.9);
+  --dsw-menu-surface-fill: rgba(31, 31, 31, 0.9);
+  --dsw-alias-menu-group-header-fill: rgba(31, 31, 31, 0.96);
+  --dsw-menu-backdrop-filter: blur(16px) saturate(120%);
+
+  /* ---- misc chrome ---------------------------------------------------- */
+  --dsw-alias-toast-bg: var(--pui-surface-4);
+  --dsw-alias-toast-label: var(--pui-text-primary);
+  --dsw-alias-tooltip-bg: var(--pui-surface-4);
+  --dsw-alias-tooltip-key-bg: color-mix(in srgb, var(--pui-surface-4), white 14%);
+  --dsw-alias-switch-thumb: #d4d4da;
+  --dsw-alias-scrollbar-bg-l1: rgba(255, 255, 255, 0.14);
+  --dsw-alias-scrollbar-bg-l2: rgba(255, 255, 255, 0.2);
+  --dsw-alias-scrollbar-hover-l1: rgba(255, 255, 255, 0.24);
+  --dsw-alias-scrollbar-hover-l2: rgba(255, 255, 255, 0.3);
+
+  /* ---- elevation: hairline stroke + faint, tight shadow ---------------- */
+  --dsw-elevation-stroke-color: var(--pui-border-active);
+  --dsw-shadow-lv1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --dsw-shadow-lv2: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --dsw-shadow-lv3: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --dsw-mask-blur: none;
+
+  --dsw-focus-ring-color: rgba(56, 189, 248, 0.65);
+  --dsw-focus-ring-width: 2px;
+
+  /* ---- radius --------------------------------------------------------- */
+  --dsw-radius-xs: var(--pui-radius-xs);
+  --dsw-radius-sm: var(--pui-radius-sm);
+  --dsw-radius-md: var(--pui-radius-md);
+  --dsw-radius-lg: var(--pui-radius-card);
+  --dsw-radius-xl: 20px;
+  --dsw-radius-panel: var(--pui-radius-panel);
+}
+
+/* Elevation is re-declared per element by the stock sheet; mirror that so a
+ * surface's stroke-colour rebind still reaches its own shadow. */
+html body[data-ds-dark-theme],
+html body[data-ds-dark-theme] * {
+  --dsw-elevation-stroke: 0 0 0 0.5px var(--dsw-elevation-stroke-color);
+  --dsw-elevation-panel: var(--dsw-elevation-stroke), 0 6px 20px -12px rgba(0, 0, 0, 0.55),
+    0 1px 2px rgba(0, 0, 0, 0.25);
+  --dsw-elevation-prominent: var(--dsw-elevation-stroke), 0 16px 40px -16px rgba(0, 0, 0, 0.6),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+  --dsw-elevation-soft: var(--dsw-elevation-stroke), 0 10px 28px -18px rgba(0, 0, 0, 0.5);
+}
+
+/* =====================================================================
+ * 4. Light semantics — the light twin (kept coherent; not the main target).
+ * ===================================================================== */
+html body:not([data-ds-dark-theme]) {
+  /* The --pui-* primitives are semantic in practice: components read them in
+   * both themes, so the light twin re-points them at the light surface ramp. */
+  --pui-canvas: #f7f7f8;
+  --pui-surface-1: #ffffff;
+  --pui-surface-2: #ffffff;
+  --pui-surface-3: #f0f0f2;
+  --pui-surface-4: #ececef;
+  --pui-surface-5: #e2e2e7;
+  --pui-text-primary: #1a1a1b;
+  --pui-text-secondary: #52525b;
+  --pui-text-tertiary: #5f5f68;
+  --pui-text-caption: #6b6b73;
+  --pui-text-muted: #75757e;
+  --pui-text-on-light: #ffffff;
+  --pui-border-divider: rgba(0, 0, 0, 0.05);
+  --pui-border-default: rgba(0, 0, 0, 0.07);
+  --pui-border-hover: rgba(0, 0, 0, 0.12);
+  --pui-border-active: rgba(0, 0, 0, 0.2);
+  --pui-border-inverted: rgba(255, 255, 255, 0.07);
+
+  --dsw-alias-bg-base: #f7f7f8;
+  --dsw-alias-bg-layer-1: #ffffff;
+  --dsw-alias-bg-layer-2: #ffffff;
+  --dsw-alias-bg-layer-3: #f0f0f2;
+  --dsw-alias-bg-overlay: #ffffff;
+  --dsw-alias-bg-mask-1: rgba(0, 0, 0, 0.28);
+  --dsw-alias-bg-mask-2: rgba(0, 0, 0, 0.12);
+  --dsw-alias-bg-mask-3: rgba(0, 0, 0, 0.42);
+  --dsw-alias-bg-mask-drop: rgba(255, 255, 255, 0.72);
+  --dsw-alias-bg-skeleton: rgba(0, 0, 0, 0.05);
+  --dsw-alias-bg-module-platform: #f0f0f2;
+  --dsw-alias-bg-multi-select: #ececef;
+  --dsw-alias-bg-document-preview: #f0f0f2;
+
+  --dsw-alias-label-primary: #1a1a1b;
+  --dsw-alias-label-secondary: #52525b;
+  --dsw-alias-label-tertiary: #5f5f68;
+  --dsw-alias-label-caption: #6b6b73;
+  --dsw-alias-label-dimmed: #75757e;
+  --dsw-alias-label-primary-dimmed: #333336;
+  --dsw-alias-label-primary-bluish: #1a1a1b;
+  --dsw-alias-label-primary-foreground: #ffffff;
+  --dsw-alias-label-primary-inverted: #ffffff;
+  --dsw-alias-label-shimmer: rgba(0, 0, 0, 0.3);
+  --dsw-alias-menu-icon: #52525b;
+  --dsw-alias-link: #0369a1;
+
+  --dsw-alias-border-l1: rgba(0, 0, 0, 0.05);
+  --dsw-alias-border-l2: rgba(0, 0, 0, 0.07);
+  --dsw-alias-border-l2-darkmode-thin: rgba(0, 0, 0, 0.07);
+  --dsw-alias-border-l3: rgba(0, 0, 0, 0.1);
+  --dsw-alias-border-l4: rgba(0, 0, 0, 0.16);
+
+  --dsw-alias-interactive-bg-hover: rgba(24, 24, 27, 0.05);
+  --dsw-alias-interactive-bg-active: rgba(24, 24, 27, 0.09);
+  --dsw-alias-interactive-bg-hover-solid: #ececef;
+  --dsw-alias-interactive-bg-hover-accent: rgba(14, 165, 233, 0.12);
+  --dsw-alias-interactive-bg-hover-danger: rgba(225, 29, 72, 0.08);
+
+  --dsw-alias-brand-primary: #18181b;
+  --dsw-alias-brand-text: #18181b;
+  --dsw-alias-button-primary-fill: #18181b;
+  --dsw-alias-button-primary-hover: #333336;
+  --dsw-alias-button-primary-dimmed: #d4d4da;
+  --dsw-alias-button-contrast-fill: #18181b;
+  --dsw-alias-button-elevated-fill: #ffffff;
+  --dsw-alias-button-floating-fill: #ffffff;
+  --dsw-alias-button-floating-hover: #f2f2f4;
+  --dsw-alias-button-ghost-active-fill: #ececef;
+  --dsw-alias-button-ghost-active-hover: #e2e2e7;
+  --dsw-alias-button-ghost-active-border: rgba(0, 0, 0, 0.16);
+  --dsw-alias-button-info-fill: #0369a1;
+  --dsw-alias-button-info-hover: #0284c7;
+
+  --dsw-alias-state-business-primary: #0369a1;
+  --dsw-alias-state-business-tertiary: rgba(3, 105, 161, 0.12);
+  --dsw-alias-state-success-primary: #059669;
+  --dsw-alias-state-success-secondary: #10b981;
+  --dsw-alias-state-success-tertiary: rgba(5, 150, 105, 0.12);
+  --dsw-alias-state-warn-primary: #d97706;
+  --dsw-alias-state-warn-secondary: #f59e0b;
+  --dsw-alias-state-warn-tertiary: rgba(217, 119, 6, 0.12);
+  --dsw-alias-state-warn-label: #b45309;
+  --dsw-alias-state-error-primary: #e11d48;
+  --dsw-alias-state-error-secondary: #f43f5e;
+  --dsw-alias-state-done-primary: #7c3aed;
+  --dsw-alias-state-idle-primary: #d4d4da;
+
+  --dsw-alias-markdown-code-block: #f6f6f7;
+  --dsw-alias-markdown-code-block-banner: #f0f0f2;
+  --dsw-alias-markdown-inline-code: #ececef;
+  --dsw-alias-markdown-tag: #ececef;
+  --dsw-alias-markdown-placeholder: rgba(0, 0, 0, 0.14);
+  --dsw-alias-turn-trigger-bg: #f0f0f2;
+  --dsw-alias-turn-trigger-bg-hover: #ececef;
+
+  --dsw-specific-bubble: #f0f0f2;
+  --dsw-specific-bubble-highlight: #e2e2e7;
+  --dsw-specific-input-major: #ffffff;
+  --dsw-specific-selector: #f0f0f2;
+  --dsw-specific-sidebar-fill: #fbfbfc;
+  --dsw-specific-sidebar-nav-item-active: #ececef;
+  --dsw-specific-sidebar-nav-item-active-accent: #0284c7;
+  --dsw-specific-tip: #f0f0f2;
+  --dsw-specific-menu: rgba(255, 255, 255, 0.9);
+  --dsw-menu-surface-fill: rgba(255, 255, 255, 0.9);
+  --dsw-alias-menu-group-header-fill: rgba(255, 255, 255, 0.96);
+
+  --dsw-alias-toast-bg: #18181b;
+  --dsw-alias-toast-label: #ffffff;
+  --dsw-alias-tooltip-bg: #18181b;
+  --dsw-alias-tooltip-key-bg: color-mix(in srgb, #18181b, white 18%);
+  --dsw-alias-switch-thumb: #ffffff;
+  --dsw-alias-scrollbar-bg-l1: rgba(0, 0, 0, 0.16);
+  --dsw-alias-scrollbar-bg-l2: rgba(0, 0, 0, 0.22);
+  --dsw-alias-scrollbar-hover-l1: rgba(0, 0, 0, 0.26);
+  --dsw-alias-scrollbar-hover-l2: rgba(0, 0, 0, 0.32);
+
+  --dsw-elevation-stroke-color: rgba(0, 0, 0, 0.08);
+  --dsw-focus-ring-color: rgba(2, 132, 199, 0.6);
+  --dsw-focus-ring-width: 2px;
+}
+
+/* Light syntax palette tuned for AA on the light code-block surface. */
+html body:not([data-ds-dark-theme]) {
+  --shiki-token-constant: #1864ab;
+  --shiki-token-string: #1e7e34;
+  --shiki-token-comment: #5c636a;
+  --shiki-token-keyword: #a61e4d;
+  --shiki-token-parameter: #b35c00;
+  --shiki-token-function: #5f3dc4;
+  --shiki-token-string-expression: #1e7e34;
+  --shiki-token-punctuation: #3b4045;
+  --shiki-token-link: #1864ab;
+}
+
+/* =====================================================================
+ * 5. Geometry · typography · motion · focus (theme-independent)
+ * ===================================================================== */
+html body {
+  --dsh-font-family-text-default: var(--pui-font-ui);
+  --dsh-font-family-code-default: var(--pui-font-mono);
+  --dsw-font-family: var(--dsh-font-family-text, var(--dsh-font-family-text-default));
+  --ds-font-family-code: var(--dsh-font-family-code, var(--dsh-font-family-code-default));
+
+  --ds-ease-in-out: var(--pui-ease-standard);
+  --ds-transition-duration: 0.18s;
+  --ds-transition-duration-fast: 0.11s;
+  --ds-transition-duration-slow: 0.24s;
+
+  --dsh-scrollbar-width: 6px;
+  --pui-line-length: 44rem;
+}
+
+/* =====================================================================
+ * 6. Density / radius options (html[data-palace-*], set by client.js)
+ * ===================================================================== */
+html[data-palace-radius='crisp'] body {
+  --pui-radius-card: 12px;
+  --pui-radius-input: 10px;
+  --pui-radius-panel: 18px;
+  --dsw-radius-lg: 12px;
+  --dsw-radius-xl: 16px;
+  --dsw-radius-panel: 18px;
+}
+
+html[data-palace-density='compact'] body {
+  --pui-space-md: 10px;
+  --pui-space-lg: 14px;
+  --pui-space-xl: 20px;
+  --pui-touch-target: 40px;
+}

@@ -1,0 +1,29 @@
+[Unit]
+Description=Palace authentication gateway
+Documentation=file:/home/ubuntu/palace/auth/README.md
+After=network-online.target palace-bot.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/palace/auth
+Environment=NODE_ENV=production
+Environment=PALACE_AUTH_CONFIG=/home/ubuntu/palace/auth/config.env
+Environment=PATH=/home/ubuntu/.local/share/fnm/node-versions/v24.19.0/installation/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/ubuntu/.local/share/fnm/node-versions/v24.19.0/installation/bin/node /home/ubuntu/palace/auth/src/server.mjs
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=15
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/ubuntu/palace/auth/var
+StandardOutput=append:/home/ubuntu/palace/state/palace-auth.log
+StandardError=append:/home/ubuntu/palace/state/palace-auth.log
+
+[Install]
+WantedBy=multi-user.target

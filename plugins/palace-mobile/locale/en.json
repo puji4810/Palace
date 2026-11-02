@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "title": "Palace Mobile",
+    "description": "Phone-friendly shell: bottom navigation, pill header and floating composer."
+  },
+  "nav": {
+    "chat": "Chat",
+    "tasks": "Tasks",
+    "files": "Files",
+    "me": "Me"
+  },
+  "header": {
+    "online": "Online"
+  },
+  "composer": {
+    "placeholder": "Message Palace",
+    "attach": "Add attachment",
+    "voice": "Voice",
+    "send": "Send",
+    "stop": "Stop"
+  }
+}

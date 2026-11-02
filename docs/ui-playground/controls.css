@@ -1,0 +1,191 @@
+/* Custom dropdown (replaces native <select>) and segmented pill group.
+ * All values come from semantic tokens — no hard-coded colours or sizes. */
+
+.pg-select {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  min-height: var(--touch-target-min);
+  min-width: 0;
+  max-width: 100%;
+  padding: 0 var(--space-md);
+  border: 1px solid var(--border-hover);
+  border-top-color: var(--border-top-highlight);
+  border-radius: var(--comp-btn-radius);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--text-btn-size);
+  line-height: var(--text-btn-lh);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-hover) ease-out,
+    border-color var(--dur-hover) ease-out;
+}
+.pg-select > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pg-select:hover:not(:disabled) {
+  background: var(--surface-3);
+  border-color: var(--border-active);
+}
+.pg-select:focus-visible {
+  outline: 2px solid var(--ring-focus);
+  outline-offset: var(--space-xs);
+}
+.pg-select[data-open] {
+  background: var(--surface-3);
+  border-color: var(--border-active);
+}
+.pg-select:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.pg-select-sm {
+  min-height: var(--touch-target-min);
+  padding: 0 var(--space-sm);
+  font-size: var(--text-meta-size);
+}
+.pg-select-placeholder {
+  color: var(--text-muted);
+}
+.pg-select-chevron {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  transition: transform var(--dur-hover) var(--ease-panel);
+}
+.pg-select[data-open] .pg-select-chevron {
+  transform: rotate(180deg);
+}
+
+.pg-select-panel {
+  z-index: 70;
+  min-width: var(--select-panel-min, 180px);
+  max-width: min(320px, calc(100vw - 24px));
+  padding: var(--space-xs);
+  border: 1px solid var(--border-hover);
+  border-top-color: var(--border-top-highlight);
+  border-radius: var(--comp-btn-radius);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  animation: pg-select-in var(--dur-panel) var(--ease-panel);
+  transform-origin: top left;
+}
+.pg-select-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  max-height: min(320px, 60vh);
+  overflow: auto;
+  outline: none;
+}
+.pg-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  min-height: var(--touch-target-min);
+  padding: 0 var(--space-md);
+  border-radius: var(--comp-card-inner-rad);
+  font-size: var(--text-btn-size);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color var(--dur-hover) ease-out;
+}
+.pg-select-option svg {
+  width: 16px;
+  height: 16px;
+  color: var(--accent-info);
+  flex-shrink: 0;
+}
+.pg-select-option[data-active] {
+  background: var(--surface-4);
+}
+.pg-select-option[aria-selected='true'] {
+  color: var(--text-primary);
+  font-weight: var(--text-btn-weight);
+}
+.pg-select-option[aria-disabled='true'] {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+@keyframes pg-select-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---- Segmented pills ---- */
+.pg-pills {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  min-width: 0;
+  max-width: 100%;
+}
+.pg-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-height: var(--touch-target-min);
+  padding: 0 var(--space-md);
+  border: 1px solid var(--border-default);
+  border-radius: var(--comp-pill-radius);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--text-meta-size);
+  font-weight: var(--text-btn-weight);
+  white-space: nowrap;
+  cursor: pointer;
+  isolation: isolate;
+  transition:
+    color var(--dur-hover) ease-out,
+    background-color var(--dur-hover) ease-out,
+    border-color var(--dur-hover) ease-out;
+}
+.pg-pill svg {
+  width: 14px;
+  height: 14px;
+}
+.pg-pill:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--surface-3);
+  border-color: var(--border-hover);
+}
+.pg-pill[data-selected] {
+  color: var(--accent-info);
+  background: var(--accent-info-bg);
+  border-color: var(--accent-info-border);
+}
+.pg-pill:focus-visible {
+  outline: 2px solid var(--ring-focus);
+  outline-offset: var(--space-xs);
+}
+.pg-pill:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pg-select-panel,
+  .pg-select-chevron {
+    animation: none;
+    transition: none;
+  }
+}

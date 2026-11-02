@@ -1,0 +1,1674 @@
+/* =====================================================================
+ * palace-ui / 21 · Conversation transcript
+ * =====================================================================
+ * The reading surface: transcript rhythm, user bubbles, assistant markdown,
+ * code chrome, tables, reasoning / tool-call rows, turn status and action
+ * rows, streaming and scroll affordances.
+ *
+ * Section map
+ *   1. Frame, reading column, vertical rhythm
+ *   2. User message + actions
+ *   3. Assistant markdown (type scale, lists, quote, hr, links, inline code,
+ *      images, misc inline elements)
+ *   4. Code blocks (banner, wrap policy, scroll)
+ *   5. Tables (internal scroll, sticky head, hairlines, numerals, zebra)
+ *   6. Reasoning / tool rows (six-state language, terminal, web results)
+ *   7. Turn status, action row, usage + time meta
+ *   8. Streaming, scroll-to-bottom and error surfaces
+ *   9. Responsive, touch, forced-colours, reduced motion
+ *
+ * Every selector is pinned to DSH 0.2.1-rc.5 CSS-module hashes; the hash map
+ * and its role live in docs/palace-ui-conversation.md. Tokens only — a literal
+ * colour must never appear in this file.
+ * ===================================================================== */
+
+/* Component-local readable error text. Rose-soft reads well on the dark
+ * canvas, but is too light on the light canvas; both resolve from tokens. */
+html body {
+  --pui-c-error-text: var(--pui-accent-rose-soft);
+}
+
+html body:not([data-ds-dark-theme]) {
+  --pui-c-error-text: color-mix(
+    in srgb,
+    var(--dsw-alias-state-error-primary) 86%,
+    var(--dsw-alias-label-primary)
+  );
+}
+
+/* Markdown links inherit the stock link colour in dark (11:1 on canvas); in
+ * light the stock #0284c7 is 3.83:1, so mix towards text-primary for 4.9:1. */
+html body {
+  --pui-c-link: var(--dsw-alias-link);
+}
+
+html body:not([data-ds-dark-theme]) {
+  --pui-c-link: color-mix(in srgb, var(--dsw-alias-link) 82%, var(--dsw-alias-label-primary));
+}
+
+/* =====================================================================
+ * 1. Frame · reading column · vertical rhythm
+ * ===================================================================== */
+
+/* The transcript keeps the user-resizable DSH column width; we only tune the
+ * scroll padding so anchor jumps and the sticky code banner breathe. */
+html body .EvIC1a_scroll {
+  padding-top: 20px;
+  padding-bottom: 28px;
+  scroll-padding-block: 24px;
+  overscroll-behavior-y: contain;
+}
+
+html body .EvIC1a_column {
+  min-width: 0;
+}
+
+html body .EvIC1a_flowItem {
+  min-width: 0;
+}
+
+/* A new user turn opens a new reading beat: room above the bubble, while the
+ * stock inter-item gap keeps tool rows dense. Padding (not margin) avoids a
+ * specificity fight with the stock gap machinery. */
+html body .EvIC1a_column > .EvIC1a_flowItem[data-chat-flow-kind='user'] {
+  padding-top: 22px;
+}
+
+html body .EvIC1a_column > .EvIC1a_flowItem[data-chat-flow-kind='user']:first-child {
+  padding-top: 0;
+}
+
+html body .EvIC1a_flowItem[data-chat-flow-kind='turn-process'] {
+  padding-top: 2px;
+}
+
+html body .EvIC1a_flowItem[data-chat-group-part='response'] {
+  padding-top: 2px;
+}
+
+/* Turn tail is the quiet end of a turn: keep it tight against the answer. */
+html body .EvIC1a_flowItem[data-chat-flow-kind='turn-tail'] {
+  padding-top: 2px;
+}
+
+html body .EvIC1a_turnSpacer {
+  height: 8px;
+}
+
+/* =====================================================================
+ * 2. User message · surface-3 bubble, hover/focus actions
+ * ===================================================================== */
+
+html body .Sixlwa_userRow {
+  gap: 2px;
+}
+
+html body .Sixlwa_userStack {
+  max-width: min(calc(var(--dsh-chat-content-width, 748px) * 0.78), 88%);
+  gap: 4px;
+}
+
+html body .Sixlwa_bubble {
+  background: var(--dsw-specific-bubble);
+  border: 1px solid var(--pui-border-default);
+  border-radius: var(--pui-radius-card) var(--pui-radius-card) var(--pui-radius-xs)
+    var(--pui-radius-card);
+  padding: 11px 16px;
+  font-size: calc(var(--dsh-content-font-size, 14px) + 1px);
+  line-height: 1.68;
+  color: var(--dsw-alias-label-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Attachments inside a user turn read as quiet chips, not cards. */
+html body .Sixlwa_attachmentRow {
+  gap: 6px;
+}
+
+html body .Sixlwa_referenceSummary,
+html body .Sixlwa_contextRow {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+/* User actions: the timestamp stays as a quiet meta line, the actionable
+ * buttons reveal on hover/focus. Kept in flow so revealing never shifts the
+ * transcript; touch devices always show the buttons. */
+html body .Sixlwa_userRow > .xzv4MW_actions {
+  opacity: 1;
+  transform: none;
+}
+
+html body .Sixlwa_userRow > .xzv4MW_actions .xzv4MW_action {
+  opacity: 0;
+  transition: opacity var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body .Sixlwa_userRow:is(:hover, :focus-within) > .xzv4MW_actions .xzv4MW_action {
+  opacity: 1;
+}
+
+html body .xzv4MW_timeStart {
+  padding-right: 4px;
+  font-family: var(--pui-font-mono);
+  font-size: 11.5px;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: var(--dsw-alias-label-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* =====================================================================
+ * 3. Assistant markdown — document-scale type, quiet chrome
+ * ===================================================================== */
+
+html body .hWmORq_root {
+  font-size: calc(var(--dsh-content-font-size, 14px) + 1px);
+  line-height: 1.72;
+  color: var(--dsw-alias-label-primary);
+}
+
+html body .hWmORq_body {
+  gap: 14px;
+}
+
+html body .hWmORq_actions {
+  margin-top: 10px;
+}
+
+html body .hWmORq_stopped {
+  align-self: flex-start;
+  padding: 1px 7px;
+  border: 1px solid var(--pui-border-default);
+  border-radius: var(--pui-radius-sm);
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11.5px;
+  line-height: 18px;
+}
+
+html body ._markdown_1ypvv_5 {
+  font-size: calc(var(--dsh-content-font-size, 14px) + 1px);
+  line-height: 1.72;
+  color: var(--dsw-alias-label-primary);
+}
+
+/* Headings: tight, low-contrast letterspacing, no oversized hero type. */
+html body ._markdown_1ypvv_5 h1 {
+  margin: 30px 0 12px;
+  font-size: calc(var(--dsh-content-font-size, 14px) + 10px);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.018em;
+}
+
+html body ._markdown_1ypvv_5 h2 {
+  margin: 28px 0 10px;
+  font-size: calc(var(--dsh-content-font-size, 14px) + 5.5px);
+  font-weight: 600;
+  line-height: 1.36;
+  letter-spacing: -0.012em;
+}
+
+html body ._markdown_1ypvv_5 h3 {
+  margin: 22px 0 8px;
+  font-size: calc(var(--dsh-content-font-size, 14px) + 2.5px);
+  font-weight: 600;
+  line-height: 1.42;
+  letter-spacing: -0.006em;
+}
+
+html body ._markdown_1ypvv_5 h4 {
+  margin: 18px 0 6px;
+  font-size: calc(var(--dsh-content-font-size, 14px) + 1px);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+html body ._markdown_1ypvv_5 :where(h5, h6) {
+  margin: 16px 0 6px;
+  font-size: calc(var(--dsh-content-font-size, 14px) - 0.5px);
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--dsw-alias-label-secondary);
+}
+
+html body ._markdown_1ypvv_5 :where(h1, h2, h3, h4) strong {
+  color: inherit;
+}
+
+/* Body copy and lists. */
+html body ._markdown_1ypvv_5 p {
+  margin: 0 0 13px;
+}
+
+html body ._markdown_1ypvv_5 :where(ul, ol) {
+  margin: 13px 0 15px;
+  padding-left: 22px;
+}
+
+html body ._markdown_1ypvv_5 li {
+  margin-top: 5px;
+  padding-left: 2px;
+}
+
+html body ._markdown_1ypvv_5 li:first-child {
+  margin-top: 0;
+}
+
+html body ._markdown_1ypvv_5 li > :where(ul, ol) {
+  margin: 6px 0 2px;
+}
+
+html body ._markdown_1ypvv_5 li::marker {
+  color: var(--dsw-alias-label-tertiary);
+  line-height: 1.6;
+}
+
+html body ._markdown_1ypvv_5 :where(ul, ol) ol {
+  list-style-position: outside;
+  padding-left: 22px;
+}
+
+/* Quote: accent rule + a whisper of surface, never a second card. */
+html body ._markdown_1ypvv_5 blockquote {
+  margin: 16px 0;
+  padding: 10px 16px 10px 16px;
+  border-left: 2px solid var(--dsw-alias-state-business-primary);
+  border-radius: 0 var(--pui-radius-sm) var(--pui-radius-sm) 0;
+  background: color-mix(in srgb, var(--dsw-alias-bg-layer-2) 52%, transparent);
+  color: var(--dsw-alias-label-secondary);
+}
+
+html body ._markdown_1ypvv_5 blockquote > :first-child {
+  margin-top: 0;
+}
+
+html body ._markdown_1ypvv_5 blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+html body ._markdown_1ypvv_5 hr {
+  height: 1px;
+  margin: 26px 0;
+  border: 0;
+  background: var(--dsw-alias-border-l2);
+}
+
+/* Links: accent at rest, dotted underline on hover/focus, no colour-only cue. */
+html body ._markdown_1ypvv_5 a,
+html body ._markdown_1ypvv_5 ._fileLink_1ypvv_59 {
+  color: var(--pui-c-link);
+  font-weight: 500;
+  text-decoration: none;
+  transition: color var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body ._markdown_1ypvv_5 a:is(:hover, :focus-visible),
+html body ._markdown_1ypvv_5 ._fileLink_1ypvv_59:is(:hover, :focus-visible) {
+  color: var(--pui-c-link);
+  text-decoration: underline dotted currentColor;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+html body ._markdown_1ypvv_5 a:focus-visible,
+html body ._fileMention_1ypvv_85:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color, var(--pui-accent-sky));
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+/* Inline code: a 12.5px mono chip on the stock surface token. */
+html body ._markdown_1ypvv_5 :not(pre) > code {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 1px 5px;
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: var(--pui-radius-sm);
+  background: var(--dsw-alias-markdown-inline-code);
+  color: var(--dsw-alias-label-primary);
+  font-family: var(--pui-font-mono);
+  /* Stock sets `.875em !important`; a single matching !important is the only
+   * way to land the specified 12.5px chip size without changing the em base. */
+  font-size: 12.5px !important;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  vertical-align: baseline;
+}
+
+html body ._markdown_1ypvv_5 :where(h1, h2, h3, h4, h5, h6) code {
+  background: transparent;
+  border-color: transparent;
+  padding: 0;
+  font-size: 0.9em;
+}
+
+/* Images reserve their box from width/height attributes and never jump. */
+html body ._image_1ypvv_287 {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: 420px;
+  height: auto;
+  margin: 2px 0;
+  border: 1px solid var(--pui-border-default);
+  border-radius: var(--pui-radius-lg);
+  background: var(--dsw-alias-bg-skeleton);
+  object-fit: contain;
+}
+
+html body ._imageButton_1ypvv_446 {
+  display: block;
+  max-width: min(100%, 640px);
+  margin: 12px 0;
+  padding: 0;
+  border-radius: var(--pui-radius-lg);
+  background: transparent;
+  cursor: zoom-in;
+}
+
+html body ._imageButton_1ypvv_446:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color, var(--pui-accent-sky));
+  outline-offset: 2px;
+}
+
+html body ._markdown_1ypvv_5 input[type='checkbox'] {
+  margin: 0 8px 0 0;
+  accent-color: var(--dsw-alias-label-secondary);
+}
+
+/* Inline semantics that occasionally appear in transcripts. */
+html body ._markdown_1ypvv_5 mark {
+  padding: 0 2px;
+  border-radius: var(--pui-radius-xs);
+  background: color-mix(in srgb, var(--pui-accent-amber) 22%, transparent);
+  color: var(--dsw-alias-label-primary);
+}
+
+html body ._markdown_1ypvv_5 kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--pui-border-default);
+  border-bottom-color: var(--pui-border-hover);
+  border-radius: var(--pui-radius-xs);
+  background: var(--dsw-alias-bg-layer-2);
+  font-family: var(--pui-font-mono);
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--dsw-alias-label-secondary);
+}
+
+/* Compact markdown is used inside reasoning / tool disclosure bodies. */
+html body ._markdown_1ypvv_5._compact_1ypvv_331 {
+  font-size: calc(var(--dsh-content-font-size, 14px) - 0.5px);
+  line-height: 1.7;
+  color: var(--dsw-alias-label-secondary);
+}
+
+html body ._markdown_1ypvv_5._compact_1ypvv_331 :where(h1, h2, h3, h4) {
+  margin: 18px 0 8px;
+  font-size: calc(var(--dsh-content-font-size, 14px) + 1px);
+  color: var(--dsw-alias-label-primary);
+}
+
+html body ._markdown_1ypvv_5._compact_1ypvv_331 :where(p, ul, ol) {
+  margin-bottom: 9px;
+}
+
+/* =====================================================================
+ * 4. Code blocks — language + copy chrome, internal scroll, wrap policy
+ * ===================================================================== */
+
+html body .md-code-block {
+  position: relative;
+  margin: 16px 0;
+  border: 1px solid var(--pui-border-default);
+  border-radius: var(--pui-radius-lg);
+  background: var(--dsw-alias-markdown-code-block);
+}
+
+html body ._bannerWrap_7gxqk_24 {
+  background: var(--dsw-alias-markdown-code-block-banner);
+  border-bottom: 1px solid var(--pui-border-divider);
+  border-radius: var(--pui-radius-lg) var(--pui-radius-lg) 0 0;
+}
+
+html body ._header_1pq26_10 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 34px;
+  padding: 0 8px 0 12px;
+  background: transparent;
+  border-radius: inherit;
+  color: var(--dsw-alias-label-tertiary);
+  font-family: var(--pui-font-ui);
+  font-size: 11px;
+  line-height: 1;
+}
+
+html body ._heading_1pq26_23 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+html body ._language_1pq26_30 {
+  flex: none;
+  color: var(--dsw-alias-label-tertiary);
+  font-family: var(--pui-font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+html body ._actions_1pq26_43 {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+
+html body ._action_1pq26_43 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--pui-radius-sm);
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  cursor: pointer;
+  transition:
+    color var(--pui-duration-hover) var(--pui-ease-out),
+    background-color var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body ._action_1pq26_43:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+html body ._action_1pq26_43:active {
+  background: var(--dsw-alias-interactive-bg-active);
+}
+
+/* Wrap is on by default; a toggle pressed state should not out-shout the
+ * language label, so it stays a quiet surface chip rather than an accent. */
+html body ._action_1pq26_43[aria-pressed='true'] {
+  color: var(--dsw-alias-label-secondary);
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+html body ._action_1pq26_43:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color, var(--pui-accent-sky));
+  outline-offset: 1px;
+}
+
+/* The pre is the only scroller: the page never widens. */
+html body .md-code-block pre {
+  max-width: 100%;
+  margin: 0;
+  padding: 12px 16px 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-radius: 0 0 calc(var(--pui-radius-lg) - 1px) calc(var(--pui-radius-lg) - 1px);
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  font-family: var(--pui-font-mono);
+  font-size: calc(var(--dsh-content-font-size, 14px) - 1.5px);
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+  tab-size: 2;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+
+html body .md-code-block pre code {
+  font: inherit;
+  background: none;
+  padding: 0;
+  white-space: inherit;
+  overflow-wrap: inherit;
+  word-break: inherit;
+}
+
+/* Prose wrap (default): long code lines wrap, height grows smoothly. */
+html body .md-code-block[data-code-wrap='true'] pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+/* Wrap off: horizontal scroll inside the block, stable one-line height. */
+html body .md-code-block[data-code-wrap='false'] pre {
+  white-space: pre;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+/* Bare markdown fences (no code-block card) follow the same chrome. */
+html body ._markdown_1ypvv_5 pre {
+  margin: 16px 0;
+  padding: 12px 16px;
+  max-width: 100%;
+  overflow: auto;
+  border: 1px solid var(--pui-border-default);
+  border-radius: var(--pui-radius-lg);
+  background: var(--dsw-alias-markdown-code-block);
+  font-family: var(--pui-font-mono);
+  font-size: calc(var(--dsh-content-font-size, 14px) - 1.5px);
+  line-height: 20px;
+  overscroll-behavior-x: contain;
+}
+
+/* =====================================================================
+ * 5. Tables — internal horizontal scroll, sticky head, hairlines, numerals
+ * ===================================================================== */
+
+html body ._markdown_1ypvv_5 ._tableScroll_1ypvv_192 {
+  max-width: 100%;
+  margin: 16px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  border: 1px solid var(--pui-border-default);
+  border-radius: var(--pui-radius-lg);
+  background: transparent;
+  scrollbar-width: thin;
+}
+
+/* The stock "wide table" bleeds into the column spare space; disable it so a
+ * table can never widen the document at any viewport. */
+html body .hWmORq_body .md-table-wide,
+html body ._tableScroll_1ypvv_192.md-table-wide {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 0;
+  overflow-x: auto;
+}
+
+html body ._tableScroll_1ypvv_192:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color, var(--pui-accent-sky));
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+html body ._tableScroll_1ypvv_192 table {
+  width: 100%;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: start;
+  font-size: calc(var(--dsh-content-font-size, 14px) - 0.5px);
+  line-height: 1.55;
+  font-variant-numeric: tabular-nums;
+}
+
+html body ._tableScroll_1ypvv_192 thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 9px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--pui-border-hover);
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  text-align: start;
+  white-space: nowrap;
+}
+
+html body ._tableScroll_1ypvv_192 tbody td {
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--pui-border-divider);
+  color: var(--dsw-alias-label-primary);
+  font-size: calc(var(--dsh-content-font-size, 14px) - 0.5px);
+  line-height: 1.55;
+  text-align: start;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+html body ._tableScroll_1ypvv_192 tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Subtle zebra + hover; both stay inside the container. */
+html body ._tableScroll_1ypvv_192 tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--dsw-alias-bg-layer-2) 34%, transparent);
+}
+
+html body ._tableScroll_1ypvv_192 tbody tr:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+html body ._tableScroll_1ypvv_192 th:first-child,
+html body ._tableScroll_1ypvv_192 td:first-child {
+  padding-left: 14px;
+}
+
+html body ._tableScroll_1ypvv_192 td:last-child {
+  padding-right: 14px;
+}
+
+html body ._tableScroll_1ypvv_192 table code {
+  font-family: var(--pui-font-mono);
+  font-size: 11.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* =====================================================================
+ * 6. Reasoning / tool-call rows — six-state language, terminal, results
+ * ===================================================================== */
+
+/* Shared disclosure base: one 28px quiet row, mono-ish metrics, no jump. */
+html body ._row_k7ery_26 {
+  height: 28px;
+  min-width: 0;
+  border-radius: var(--pui-radius-sm);
+  color: var(--dsw-alias-label-tertiary);
+  transition: color var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body ._row_k7ery_26[data-expandable] {
+  cursor: pointer;
+}
+
+html body ._row_k7ery_26[data-expandable]:hover {
+  color: var(--dsw-alias-label-secondary);
+}
+
+html body ._row_k7ery_26:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color, var(--pui-accent-sky));
+  outline-offset: 1px;
+}
+
+/* The disclosure chevron replaces the state glyph on hover in stock CSS; let
+ * keyboard focus reveal it too so the expand affordance is not hover-only. */
+html body ._row_k7ery_26:focus-visible ._iconIdle_k7ery_78 {
+  opacity: 0;
+}
+
+html body ._row_k7ery_26:focus-visible ._chevronHover_k7ery_84 {
+  opacity: 1;
+}
+
+html body .O_Ebla_title:focus-visible .O_Ebla_activityIcon {
+  opacity: 0;
+}
+
+html body .O_Ebla_title:focus-visible .O_Ebla_chevron {
+  opacity: 1;
+}
+
+html body ._leading_k7ery_50 {
+  margin-right: 7px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+html body ._row_k7ery_26:is(:hover, [aria-expanded='true']) ._leading_k7ery_50 {
+  color: var(--dsw-alias-label-secondary);
+}
+
+html body ._title_k7ery_100 {
+  color: var(--dsw-alias-label-secondary);
+  font-size: calc(var(--dsh-content-font-size, 14px) - 1px);
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+html body ._row_k7ery_26:is(:hover, [aria-expanded='true']) ._title_k7ery_100 {
+  color: var(--dsw-alias-label-primary);
+}
+
+/* Tool-title classes at the same visual weight (bash / web / reasoning). */
+html body .CY-8Ka_title,
+html body .o3BgMG_title,
+html body .lcKema_title {
+  font-weight: 500;
+}
+
+/* Summary stays secondary and truncates with a soft edge while streaming. */
+html body .o3BgMG_summary,
+html body .o3BgMG_summarySuffix,
+html body .CY-8Ka_summary,
+html body .lcKema_summary,
+html body .lcKema_summaryText {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: calc(var(--dsh-content-font-size, 14px) - 1.5px);
+  line-height: 1.5;
+}
+
+html body .o3BgMG_summary,
+html body .CY-8Ka_summary,
+html body .lcKema_summary {
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+html body .o3BgMG_sep,
+html body .CY-8Ka_sep,
+html body .lcKema_separator {
+  width: 3px;
+  height: 3px;
+  margin: 0 8px;
+  background: var(--dsw-alias-label-caption);
+}
+
+/* ---- six-state visual language ------------------------------------- *
+ * idle/preparing  neutral       running   sky + subtle pulse
+ * waiting         amber         completed emerald dot, neutral label
+ * failed          restrained rose (+ retry affordance if DSH renders one)
+ * cancelled       neutral stop
+ * ------------------------------------------------------------------- */
+
+/* Running: colour the row, pulse the leading icon, keep geometry fixed. */
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='running'] ._row_k7ery_26,
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='running'] ._title_k7ery_100 {
+  color: var(--dsw-alias-state-business-primary);
+}
+
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='running'] ._leading_k7ery_50,
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='running'] .o3BgMG_summary,
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='running'] .CY-8Ka_summary,
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='running'] .lcKema_summary {
+  color: var(--dsw-alias-label-deep-diving);
+}
+
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='running'] ._leading_k7ery_50::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border-radius: var(--pui-radius-pill);
+  background: var(--dsw-alias-state-business-tertiary);
+  animation: pui-conv-pulse 1.8s var(--pui-ease-standard) infinite;
+  pointer-events: none;
+}
+
+/* Waiting on the user: amber, still, no motion (not a fake progress bar). */
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='waiting'] ._title_k7ery_100,
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='waiting'] ._leading_k7ery_50 {
+  color: var(--dsw-alias-state-warn-label);
+}
+
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='waiting'] ._row_k7ery_26 {
+  color: var(--dsw-alias-state-warn-label);
+  background: color-mix(in srgb, var(--dsw-alias-state-warn-tertiary) 55%, transparent);
+}
+
+/* Preparing / idle: neutral, slightly dimmed. */
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='preparing'] ._title_k7ery_100,
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='idle'] ._title_k7ery_100 {
+  color: var(--dsw-alias-label-tertiary);
+}
+
+/* Completed: neutral label, emerald only in the status dot. */
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='ok'] ._leading_k7ery_50,
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='done'] ._leading_k7ery_50,
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='completed'] ._leading_k7ery_50 {
+  color: var(--dsw-alias-state-success-primary);
+}
+
+/* Failed: restrained rose on title/summary, soft tint, no glow. */
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='error'] ._title_k7ery_100,
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='failed'] ._title_k7ery_100,
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='error'] ._leading_k7ery_50,
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='failed'] ._leading_k7ery_50 {
+  color: var(--pui-c-error-text);
+}
+
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='error'] ._row_k7ery_26,
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='failed'] ._row_k7ery_26 {
+  color: var(--pui-c-error-text);
+  background: color-mix(in srgb, var(--dsw-alias-state-error-tertiary) 45%, transparent);
+}
+
+html body .o3BgMG_errorSummary,
+html body .o3BgMG_errorSummary ._text_1rdzk_17,
+html body .o3BgMG_ioText[data-error] {
+  color: var(--pui-c-error-text);
+}
+
+/* Cancelled / stopped: neutral, quiet, no alarm colour. */
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='stopped'] ._row_k7ery_26,
+html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='cancelled'] ._row_k7ery_26 {
+  color: var(--dsw-alias-label-tertiary);
+  opacity: 0.9;
+}
+
+/* Expanded tool body: aligned under the row, quiet scrollers. */
+html body .o3BgMG_bodyWrap {
+  padding: 2px 0 6px 23px;
+}
+
+html body .o3BgMG_bodyScroll,
+html body .o3BgMG_detailsBodyWrap {
+  scrollbar-width: thin;
+}
+
+/* io cards (tool input / output blocks). */
+html body .o3BgMG_ioCard {
+  margin: 2px 0;
+  border: 1px solid var(--pui-border-divider);
+  border-radius: var(--pui-radius-md);
+  background: var(--dsw-alias-markdown-code-block);
+  font-family: var(--pui-font-mono);
+  font-size: calc(var(--dsh-content-font-size, 14px) - 1.5px);
+  line-height: 1.55;
+}
+
+html body .o3BgMG_ioSection {
+  column-gap: 14px;
+  padding: 10px 14px;
+  max-height: 220px;
+}
+
+html body .o3BgMG_ioLabel {
+  color: var(--dsw-alias-label-tertiary);
+  font-family: var(--pui-font-mono);
+  font-size: 10.5px;
+  line-height: 1.6;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+html body .o3BgMG_ioText {
+  color: var(--dsw-alias-label-secondary);
+  font-family: var(--pui-font-mono);
+  font-size: calc(var(--dsh-content-font-size, 14px) - 1.5px);
+  line-height: 1.6;
+}
+
+/* Expanded reasoning: a quote rail, compact secondary prose. */
+html body .lcKema_thinkBody {
+  margin: 2px 0 4px 7px;
+  padding: 4px 0 2px 15px;
+  border-left: 1px solid var(--pui-border-default);
+}
+
+/* Bash / terminal card. */
+html body .CY-8Ka_bodyWrap {
+  padding: 2px 0 4px 23px;
+}
+
+html body .CY-8Ka_terminal,
+html body ._block_8z71b_1 {
+  margin: 2px 0;
+  border: 1px solid var(--pui-border-divider);
+  border-radius: var(--pui-radius-md);
+  background: var(--dsw-alias-markdown-code-block);
+  font-family: var(--pui-font-mono);
+  font-size: calc(var(--dsh-content-font-size, 14px) - 1.5px);
+  line-height: 20px;
+}
+
+html body ._header_8z71b_32 {
+  gap: 10px;
+  padding: 8px 12px 8px 30px;
+  max-height: 168px;
+  border-bottom: 1px solid var(--pui-border-divider);
+}
+
+html body ._prompt_8z71b_70 {
+  font-family: var(--pui-font-mono);
+  font-size: calc(var(--dsh-content-font-size, 14px) - 1.5px);
+  line-height: 20px;
+}
+
+html body ._promptLine_8z71b_78 {
+  gap: 8px;
+  line-height: 20px;
+}
+
+html body ._cwd_8z71b_108 {
+  color: var(--dsw-alias-label-tertiary);
+  font-weight: 600;
+}
+
+html body ._command_8z71b_115 {
+  color: var(--dsw-alias-label-primary);
+}
+
+html body ._copyButton_8z71b_132 {
+  padding: 2px 8px;
+  border: 1px solid var(--pui-border-default);
+  border-radius: var(--pui-radius-sm);
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-tertiary);
+  font-family: var(--pui-font-ui);
+  font-size: 11px;
+  line-height: 18px;
+  transition:
+    color var(--pui-duration-hover) var(--pui-ease-out),
+    background-color var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body ._copyButton_8z71b_132:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+html body ._copyButton_8z71b_132:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color, var(--pui-accent-sky));
+  outline-offset: 1px;
+}
+
+html body ._output_8z71b_152 {
+  max-height: 280px;
+  padding: 10px 14px 10px 0;
+  font-family: var(--pui-font-mono);
+  font-size: calc(var(--dsh-content-font-size, 14px) - 1.5px);
+  line-height: 20px;
+  color: var(--dsw-alias-label-secondary);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+html body ._line_8z71b_179 {
+  min-height: 20px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+html body ._dot_1i3xo_2[data-state='done'] {
+  color: var(--dsw-alias-state-success-primary);
+}
+
+html body ._dot_1i3xo_2[data-state='error'] {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+html body ._dot_1i3xo_2[data-state='warning'] {
+  color: var(--dsw-alias-state-warn-primary);
+}
+
+html body ._dot_1i3xo_2[data-state='idle'] {
+  color: var(--pui-text-muted);
+}
+
+/* Tool inspect affordance ("查看"): a quiet chip that only notices on hover. */
+html body .o3BgMG_inspectButton,
+html body .CY-8Ka_inspectButton {
+  margin: 4px 0 0;
+  padding: 2px 8px;
+  border: 1px solid var(--pui-border-default);
+  border-radius: var(--pui-radius-pill);
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+  line-height: 16px;
+  cursor: pointer;
+  opacity: 0;
+  align-self: flex-start;
+  transition:
+    opacity var(--pui-duration-hover) var(--pui-ease-out),
+    color var(--pui-duration-hover) var(--pui-ease-out),
+    background-color var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body ._row_k7ery_26:is(:hover, :focus-within) ~ .o3BgMG_inspectButton,
+html body .CY-8Ka_root:is(:hover, :focus-within) ~ .CY-8Ka_inspectButton,
+html body .o3BgMG_inspectButton:focus-visible,
+html body .CY-8Ka_inspectButton:focus-visible {
+  opacity: 1;
+}
+
+html body .o3BgMG_inspectButton:hover,
+html body .CY-8Ka_inspectButton:hover {
+  background: var(--dsw-alias-interactive-bg-hover-solid);
+  color: var(--dsw-alias-label-primary);
+}
+
+/* Web search sources + fetched web bodies. */
+html body ._block_ca4yc_1 {
+  margin: 4px 0 2px;
+  padding: 10px 14px;
+  border: 1px solid var(--pui-border-divider);
+  border-radius: var(--pui-radius-md);
+  background: var(--dsw-alias-markdown-code-block);
+}
+
+html body ._sources_ca4yc_40 {
+  gap: 8px;
+  max-height: 320px;
+  padding-left: 1.35em;
+}
+
+html body ._sourceLink_ca4yc_54 {
+  color: var(--pui-c-link);
+  font-size: calc(var(--dsh-content-font-size, 14px) - 0.5px);
+  font-weight: 500;
+  line-height: 1.5;
+  word-break: break-word;
+  text-decoration: none;
+}
+
+html body ._sourceLink_ca4yc_54:is(:hover, :focus-visible) {
+  text-decoration: underline dotted currentColor;
+  text-underline-offset: 3px;
+}
+
+/* The nested process group (activity summary + its members). */
+html body .O_Ebla_title {
+  min-height: 28px;
+  padding: 0;
+  gap: 7px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: calc(var(--dsh-content-font-size, 14px) - 1px);
+  line-height: 1.5;
+  transition: color var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body .O_Ebla_title:is(:hover, :focus-visible, [aria-expanded='true']) {
+  color: var(--dsw-alias-label-secondary);
+}
+
+html body .O_Ebla_title:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color, var(--pui-accent-sky));
+  outline-offset: 2px;
+  border-radius: var(--pui-radius-sm);
+}
+
+html body .O_Ebla_title[aria-expanded='true'] {
+  padding-bottom: 4px;
+}
+
+html body .O_Ebla_body {
+  margin-top: 2px;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+
+html body .O_Ebla_content {
+  gap: 2px;
+}
+
+/* Compact disclosure rows used as the process-group children get a slightly
+   tighter leading-icon gutter than free-standing rows. */
+html body .O_Ebla_content ._row_k7ery_26,
+html body .O_Ebla_content .CY-8Ka_root {
+  max-width: 100%;
+}
+
+/* =====================================================================
+ * 7. Turn status · action row · usage + time
+ * ===================================================================== */
+
+/* "已完成，用时 2秒 ⌄": a quiet meta rail between process and answer. */
+html body .l_V-RG_root {
+  box-sizing: border-box;
+  height: 34px;
+  padding: 0 2px 10px;
+  border-bottom: 1px solid var(--pui-border-divider);
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12.5px;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: color var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body .l_V-RG_root:is(:hover, :focus-visible, [aria-expanded='true']) {
+  color: var(--dsw-alias-label-primary);
+}
+
+html body .l_V-RG_root:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color, var(--pui-accent-sky));
+  outline-offset: 2px;
+}
+
+html body .l_V-RG_label {
+  font-size: 12.5px;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+}
+
+html body .l_V-RG_durationNumber {
+  font-family: var(--pui-font-mono);
+  font-size: 12.5px;
+  color: var(--dsw-alias-label-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+html body .l_V-RG_chevron {
+  width: 13px;
+  height: 13px;
+  margin-left: 5px;
+  color: var(--dsw-alias-label-caption);
+  transition: transform var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body .l_V-RG_root[data-open] .l_V-RG_chevron {
+  transform: rotate(180deg);
+}
+
+/* Assistant action row: always present, quiet at rest, crisp on interaction. */
+html body .TS9iAW_root {
+  gap: 8px;
+}
+
+html body .TS9iAW_actions {
+  margin-top: 4px;
+  margin-left: -6px;
+  gap: 2px;
+  height: 30px;
+}
+
+html body .xzv4MW_actions {
+  align-items: center;
+  gap: 2px;
+  height: 30px;
+}
+
+html body .xzv4MW_action {
+  width: 30px;
+  height: 30px;
+  padding: 7px;
+  border: 0;
+  border-radius: var(--pui-radius-sm);
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  cursor: pointer;
+  transition:
+    color var(--pui-duration-hover) var(--pui-ease-out),
+    background-color var(--pui-duration-hover) var(--pui-ease-out),
+    transform var(--pui-duration-press) var(--pui-ease-out);
+}
+
+html body .xzv4MW_action svg {
+  width: 15px;
+  height: 15px;
+}
+
+html body .xzv4MW_action:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+html body .xzv4MW_action:active {
+  transform: scale(0.94);
+  background: var(--dsw-alias-interactive-bg-active);
+}
+
+html body .xzv4MW_action:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color, var(--pui-accent-sky));
+  outline-offset: 1px;
+}
+
+html body .xzv4MW_action[data-unavailable] {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* Like / dislike (message feedback) share the action geometry. */
+html body ._8_XoUG_action {
+  width: 30px;
+  height: 30px;
+  padding: 7px;
+  border: 0;
+  border-radius: var(--pui-radius-sm);
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  cursor: pointer;
+  transition:
+    color var(--pui-duration-hover) var(--pui-ease-out),
+    background-color var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body ._8_XoUG_action svg {
+  width: 15px;
+  height: 15px;
+}
+
+html body ._8_XoUG_action:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+html body ._8_XoUG_action[aria-pressed='true'] {
+  color: var(--dsw-alias-state-business-primary);
+  background: var(--dsw-alias-state-business-tertiary);
+}
+
+html body ._8_XoUG_action:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color, var(--pui-accent-sky));
+  outline-offset: 1px;
+}
+
+html body ._8_XoUG_action:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* Usage + timestamp: mono, tabular, separated by a hairline from the actions. */
+html body .xzv4MW_endInfo {
+  gap: 10px;
+  margin-left: 6px;
+  padding-left: 12px;
+  border-left: 1px solid var(--pui-border-divider);
+  color: var(--dsw-alias-label-tertiary);
+}
+
+html body .Q51KRG_root {
+  display: inline-flex;
+}
+
+html body .Q51KRG_trigger {
+  height: 26px;
+  padding: 2px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--pui-radius-sm);
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  font-family: var(--pui-font-mono);
+  font-size: 11.5px;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    color var(--pui-duration-hover) var(--pui-ease-out),
+    background-color var(--pui-duration-hover) var(--pui-ease-out),
+    border-color var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body .Q51KRG_trigger svg {
+  width: 14px;
+  height: 14px;
+}
+
+html body .Q51KRG_trigger:hover,
+html body .Q51KRG_trigger[aria-expanded='true'] {
+  background: var(--dsw-alias-interactive-bg-hover);
+  border-color: var(--pui-border-divider);
+  color: var(--dsw-alias-label-secondary);
+}
+
+html body .Q51KRG_trigger:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color, var(--pui-accent-sky));
+  outline-offset: 1px;
+}
+
+html body .xzv4MW_timeEnd {
+  font-family: var(--pui-font-mono);
+  font-size: 11.5px;
+  line-height: 1;
+  color: var(--dsw-alias-label-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* =====================================================================
+ * 8. Streaming, scroll-to-bottom, error surfaces
+ * ===================================================================== */
+
+html body .EvIC1a_running {
+  margin: 2px 0 6px;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12.5px;
+  line-height: 20px;
+}
+
+html body .EvIC1a_runningContent {
+  gap: 7px;
+}
+
+html body .EvIC1a_runningText {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+html body .EvIC1a_runningIcon {
+  color: var(--dsw-alias-state-business-primary);
+}
+
+html body .EvIC1a_runningDivider {
+  height: 1px;
+  margin: 6px 0 10px;
+  background: var(--pui-border-divider);
+}
+
+/* Scroll-to-bottom: a real button, visible focus, 44px on touch. */
+html body .EvIC1a_toBottomSlot {
+  bottom: 24px;
+  /* Keep the affordance out of the reading column when the viewport leaves a
+   * gutter (≥~1100px); on narrow screens it floats above the composer seat. */
+  padding-right: max(
+    calc(var(--dsh-composer-side-clearance, 16px) + 16px),
+    calc((100% - var(--dsh-chat-content-width, 748px)) / 2 - 78px)
+  );
+}
+
+html body .EvIC1a_toBottom {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--pui-border-divider);
+  border-radius: var(--pui-radius-pill);
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-secondary);
+  box-shadow: var(--dsw-elevation-panel);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background-color var(--pui-duration-hover) var(--pui-ease-out),
+    color var(--pui-duration-hover) var(--pui-ease-out),
+    border-color var(--pui-duration-hover) var(--pui-ease-out),
+    transform var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body .EvIC1a_toBottom:hover {
+  background: var(--dsw-alias-button-floating-hover);
+  border-color: var(--pui-border-hover);
+  color: var(--dsw-alias-label-primary);
+  transform: translateY(-1px);
+}
+
+html body .EvIC1a_toBottom:active {
+  transform: translateY(0);
+}
+
+html body .EvIC1a_toBottom:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color, var(--pui-accent-sky));
+  outline-offset: 2px;
+}
+
+/* Turn-level error surfaces. */
+html body .EvIC1a_openError {
+  color: var(--pui-c-error-text);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+/* Model-request retry status (details/summary rendered by the chat node). */
+html body .Sixlwa_retryRow {
+  margin-top: 4px;
+  color: var(--pui-c-error-text);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+html body .Sixlwa_retrySummary {
+  color: inherit;
+  padding: 2px 0;
+  border-radius: var(--pui-radius-sm);
+}
+
+html body .Sixlwa_retrySummary:hover {
+  color: var(--pui-c-error-text);
+}
+
+html body .Sixlwa_retrySummary:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color, var(--pui-accent-sky));
+  outline-offset: 2px;
+}
+
+html body .Sixlwa_retryDetails {
+  color: var(--pui-c-error-text);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+html body .Sixlwa_retryDetailLabel {
+  color: var(--dsw-alias-label-tertiary);
+}
+
+html body .EvIC1a_hint {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+html body .EvIC1a_older button {
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--pui-border-default);
+  border-radius: var(--pui-radius-pill);
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background-color var(--pui-duration-hover) var(--pui-ease-out),
+    color var(--pui-duration-hover) var(--pui-ease-out);
+}
+
+html body .EvIC1a_older button:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover-solid);
+  color: var(--dsw-alias-label-primary);
+}
+
+/* =====================================================================
+ * 9. Responsive · touch · forced colours · reduced motion
+ * ===================================================================== */
+
+@keyframes pui-conv-pulse {
+  0% {
+    opacity: 0.55;
+    transform: scale(0.72);
+  }
+  70% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+/* Tablet: keep the reading column comfortable, shorten code chrome a touch. */
+@media (max-width: 959px) {
+  html body .EvIC1a_scroll {
+    padding-top: 16px;
+    padding-bottom: 24px;
+  }
+
+  html body .Sixlwa_userStack {
+    max-width: 88%;
+  }
+
+  html body .hWmORq_root,
+  html body ._markdown_1ypvv_5 {
+    font-size: calc(var(--dsh-content-font-size, 14px) + 0.5px);
+    line-height: 1.7;
+  }
+}
+
+/* Phone: tighter gutters, full-width bubbles acceptable, no fixed heights. */
+@media (max-width: 767px) {
+  html body .EvIC1a_scroll {
+    padding: 12px 14px 24px;
+  }
+
+  html body .EvIC1a_column > .EvIC1a_flowItem[data-chat-flow-kind='user'] {
+    padding-top: 18px;
+  }
+
+  html body .Sixlwa_userStack {
+    max-width: 92%;
+  }
+
+  html body .Sixlwa_bubble {
+    padding: 10px 14px;
+    border-radius: var(--pui-radius-lg) var(--pui-radius-lg) var(--pui-radius-xs)
+      var(--pui-radius-lg);
+  }
+
+  html body ._markdown_1ypvv_5 h1 {
+    margin: 24px 0 10px;
+  }
+
+  html body ._markdown_1ypvv_5 h2 {
+    margin: 24px 0 8px;
+  }
+
+  html body ._header_1pq26_10 {
+    min-height: 36px;
+    padding: 0 6px 0 10px;
+  }
+
+  html body .md-code-block pre {
+    padding: 10px 12px 14px;
+    font-size: calc(var(--dsh-content-font-size, 14px) - 2px);
+  }
+
+  html body ._tableScroll_1ypvv_192 thead th,
+  html body ._tableScroll_1ypvv_192 tbody td {
+    padding: 8px 10px;
+  }
+
+  html body .l_V-RG_root {
+    height: 36px;
+  }
+
+  html body .xzv4MW_endInfo {
+    gap: 8px;
+    padding-left: 8px;
+    margin-left: 2px;
+  }
+
+  html body .xzv4MW_timeEnd {
+    font-size: 11px;
+  }
+}
+
+/* Touch: never hide actions behind hover. The pointer test matters — headless
+ * desktop browsers report `hover: none` without being touch devices. */
+@media (hover: none) and (pointer: coarse) {
+  html body .Sixlwa_userRow > .xzv4MW_actions .xzv4MW_action {
+    opacity: 1;
+  }
+}
+
+@media (pointer: coarse) {
+  html body .xzv4MW_action,
+  html body ._8_XoUG_action {
+    width: 44px;
+    height: 44px;
+    padding: 14px;
+    border-radius: var(--pui-radius-md);
+  }
+
+  html body .xzv4MW_action svg,
+  html body ._8_XoUG_action svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  html body .xzv4MW_actions,
+  html body .TS9iAW_actions {
+    height: 44px;
+    gap: 0;
+  }
+
+  html body .Q51KRG_trigger {
+    height: 44px;
+    min-width: 44px;
+    padding: 10px;
+    justify-content: center;
+  }
+
+  html body .o3BgMG_inspectButton,
+  html body .CY-8Ka_inspectButton {
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+
+  html body .Sixlwa_retrySummary {
+    min-height: 44px;
+    align-items: center;
+    display: inline-flex;
+  }
+
+  html body ._action_1pq26_43 {
+    width: 44px;
+    height: 44px;
+  }
+
+  html body ._header_1pq26_10 {
+    min-height: 48px;
+  }
+
+  html body ._row_k7ery_26,
+  html body .O_Ebla_title,
+  html body .l_V-RG_root {
+    min-height: 44px;
+  }
+
+  html body .lcKema_root:not([data-expanded]) {
+    height: 44px;
+  }
+
+  html body .EvIC1a_toBottom {
+    width: 44px;
+    height: 44px;
+  }
+
+  html body ._copyButton_8z71b_132 {
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+}
+
+/* Keyboard-users get a stronger focus ring on the small disclosure rows. */
+html body .O_Ebla_title:focus-visible,
+html body ._row_k7ery_26:focus-visible,
+html body .l_V-RG_root:focus-visible {
+  outline-offset: 2px;
+}
+
+/* High contrast: pair the state colour with the existing text/aria cues. */
+@media (forced-colors: active) {
+  html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='running'] ._title_k7ery_100,
+  html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='error'] ._title_k7ery_100 {
+    color: CanvasText;
+    font-weight: 600;
+  }
+
+  html body .EvIC1a_toBottom {
+    border: 1px solid ButtonText;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='running']
+    ._leading_k7ery_50::after {
+    animation: none;
+    opacity: 0;
+  }
+
+  html body .l_V-RG_chevron,
+  html body .EvIC1a_toBottom {
+    transition: none;
+  }
+}
+
+/* The in-app reduced-motion preference mirrors the OS one. */
+html[data-palace-motion='reduced'] body :is(.o3BgMG_root, .CY-8Ka_root, .lcKema_root)[data-state='running']
+  ._leading_k7ery_50::after {
+  animation: none;
+  opacity: 0;
+}
